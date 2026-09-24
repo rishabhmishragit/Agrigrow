@@ -186,10 +186,10 @@ export function AgentProfile() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 18, fontWeight: "700", color: colors.ink },
-  meta: { color: colors.muted, marginVertical: 6, lineHeight: 20 },
-  name: { fontSize: 16, color: colors.ink, flex: 1, marginRight: 8 },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 10 },
-  label: { fontWeight: "700", marginBottom: 8, color: colors.ink },
-  wrap: { flexDirection: "row", flexWrap: "wrap" },
+  title: { fontSize: 17, fontWeight: "700", letterSpacing: -0.2, color: colors.ink },
+  meta: { color: colors.muted, marginVertical: 4, lineHeight: 20, fontSize: 14 },
+  name: { fontSize: 15, color: colors.ink, flex: 1, marginRight: 8, fontWeight: "600" },
+  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.line },
+  label: { fontSize: 12, fontWeight: "700", letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 8, color: colors.muted },
+  wrap: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8 },
 });

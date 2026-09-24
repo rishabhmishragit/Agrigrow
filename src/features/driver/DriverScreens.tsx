@@ -211,6 +211,6 @@ export function DriverProfile() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 18, fontWeight: "700", color: colors.ink },
-  meta: { color: colors.muted, marginTop: 4 },
+  title: { fontSize: 17, fontWeight: "700", letterSpacing: -0.2, color: colors.ink },
+  meta: { color: colors.muted, marginTop: 4, fontSize: 14, lineHeight: 20 },
 });

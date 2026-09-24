@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useCryo } from "../../state/CryoProvider";
-import { Button, Card, Choice, Empty, Field, KeyValue, MoneyRow, Screen, StatusBadge } from "../../components/ui";
+import { Button, Card, Choice, Empty, Field, KeyValue, Metric, MoneyRow, Screen, StatusBadge } from "../../components/ui";
 import { formatGhs } from "../../domain/money";
 import {
   escrowInstructionForLot,
@@ -35,6 +35,13 @@ const SECTIONS = [
 
 type Section = (typeof SECTIONS)[number];
 
+const NAV = [
+  { label: "Overview", items: ["Dashboard"] as Section[] },
+  { label: "Trade", items: ["Listings", "Lots", "Commitments", "Escrow", "Settlements"] as Section[] },
+  { label: "Custody", items: ["Collections", "Manifests", "Deliveries"] as Section[] },
+  { label: "Control", items: ["Exceptions", "People", "Audit", "Settings"] as Section[] },
+];
+
 export function OpsConsole() {
   const { width } = useWindowDimensions();
   const wide = width >= 960;
@@ -44,11 +51,16 @@ export function OpsConsole() {
       {wide ? (
         <View style={styles.side}>
           <Text style={styles.brand}>CryoChain</Text>
-          <Text style={styles.sideNote}>Operations</Text>
-          {SECTIONS.map((item) => (
-            <Pressable key={item} onPress={() => setSection(item)} style={[styles.sideItem, item === section && styles.sideOn]}>
-              <Text style={[styles.sideText, item === section && styles.sideTextOn]}>{item}</Text>
-            </Pressable>
+          <Text style={styles.sideNote}>Operations console</Text>
+          {NAV.map((group) => (
+            <View key={group.label}>
+              <Text style={styles.group}>{group.label}</Text>
+              {group.items.map((item) => (
+                <Pressable key={item} accessibilityRole="button" onPress={() => setSection(item)} style={[styles.sideItem, item === section && styles.sideOn]}>
+                  <Text style={[styles.sideText, item === section && styles.sideTextOn]}>{item}</Text>
+                </Pressable>
+              ))}
+            </View>
           ))}
         </View>
       ) : (
@@ -100,10 +112,7 @@ function Dashboard() {
     <Screen title="Dashboard" subtitle="Supply, escrow, custody and settlement.">
       <View style={styles.grid}>
         {cards.map(([label, value]) => (
-          <Card key={label} style={styles.kpi}>
-            <Text style={styles.kpiValue}>{value}</Text>
-            <Text style={styles.kpiLabel}>{label}</Text>
-          </Card>
+          <Metric key={label} label={label} value={value} />
         ))}
       </View>
     </Screen>
@@ -461,27 +470,25 @@ function Settings() {
 const styles = StyleSheet.create({
   frame: { flex: 1, backgroundColor: colors.bg },
   frameWide: { flexDirection: "row" },
-  side: { width: 220, backgroundColor: colors.primaryDark, padding: 16 },
-  brand: { color: colors.white, fontSize: 22, fontWeight: "800" },
-  sideNote: { color: "#D5E8E0", marginBottom: 16 },
-  sideItem: { paddingVertical: 10, paddingHorizontal: 8, borderRadius: 8 },
-  sideOn: { backgroundColor: "rgba(255,255,255,0.12)" },
-  sideText: { color: "#D5E8E0", fontSize: 15 },
+  side: { width: 248, backgroundColor: colors.sidebar, paddingHorizontal: 16, paddingTop: 28, paddingBottom: 24 },
+  brand: { color: colors.white, fontSize: 20, fontWeight: "700", letterSpacing: -0.3 },
+  sideNote: { color: colors.sidebarMuted, marginTop: 4, marginBottom: 18, fontSize: 13 },
+  group: { color: colors.sidebarMuted, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginTop: 16, marginBottom: 6, paddingHorizontal: 10 },
+  sideItem: { paddingVertical: 9, paddingHorizontal: 10, borderRadius: 10, marginBottom: 2 },
+  sideOn: { backgroundColor: "rgba(255,255,255,0.08)" },
+  sideText: { color: colors.sidebarText, fontSize: 14 },
   sideTextOn: { color: colors.white, fontWeight: "700" },
-  chips: { maxHeight: 64, backgroundColor: colors.surface },
-  chipRow: { padding: 8, alignItems: "center" },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, marginRight: 8, backgroundColor: colors.bg },
-  chipOn: { backgroundColor: colors.primary },
-  chipText: { color: colors.ink, fontWeight: "600" },
+  chips: { maxHeight: 58, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.line },
+  chipRow: { paddingHorizontal: 12, paddingVertical: 10, alignItems: "center" },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, marginRight: 8, backgroundColor: colors.bg },
+  chipOn: { backgroundColor: colors.ink },
+  chipText: { color: colors.ink, fontWeight: "600", fontSize: 13 },
   chipTextOn: { color: colors.white },
   main: { flex: 1 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  kpi: { width: 180 },
-  kpiValue: { fontSize: 28, fontWeight: "800", color: colors.ink },
-  kpiLabel: { color: colors.muted, marginTop: 4 },
-  rowTitle: { fontSize: 17, fontWeight: "700", color: colors.ink, marginBottom: 4 },
-  meta: { color: colors.muted, marginBottom: 6, lineHeight: 20 },
-  selected: { borderColor: colors.primary, borderWidth: 2 },
-  warn: { color: colors.danger, marginBottom: 8 },
-  wrap: { flexDirection: "row", flexWrap: "wrap" },
+  rowTitle: { fontSize: 16, fontWeight: "700", letterSpacing: -0.2, color: colors.ink, marginBottom: 2 },
+  meta: { color: colors.muted, marginBottom: 4, lineHeight: 20, fontSize: 14 },
+  selected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  warn: { color: colors.danger, marginBottom: 8, fontWeight: "600" },
+  wrap: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8 },
 });

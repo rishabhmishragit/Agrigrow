@@ -12,7 +12,7 @@ export default function App() {
           <RootNavigator />
         </NavigationContainer>
       </CryoProvider>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
     </SafeAreaProvider>
   );
 }

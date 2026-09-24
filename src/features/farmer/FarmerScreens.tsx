@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCryo } from "../../state/CryoProvider";
-import { Button, Card, Choice, Empty, Field, KeyValue, MoneyRow, Screen, StatusBadge } from "../../components/ui";
+import { Button, Card, Choice, Empty, Field, KeyValue, MoneyRow, Screen, Section, StatusBadge } from "../../components/ui";
 import { formatGhs } from "../../domain/money";
 import { farmerName, produceName } from "../../domain/selectors";
 import { acceptCollectionBooking, createListing } from "../../domain/trade";
@@ -38,7 +38,7 @@ export function FarmerHome({ navigation }: HomeProps) {
         <Button label="Messages" tone="secondary" onPress={() => navigation.navigate("Notifications")} />
         <Button label="My details" tone="secondary" onPress={() => navigation.navigate("Profile")} />
       </View>
-      <Text style={styles.section}>Active listings</Text>
+      <Section title="Active listings" />
       {listings.filter((item) => item.status !== "SETTLED" && item.status !== "CANCELLED").length === 0 ? <Empty text="No active listings." /> : null}
       {listings
         .filter((item) => item.status !== "SETTLED" && item.status !== "CANCELLED")
@@ -51,7 +51,7 @@ export function FarmerHome({ navigation }: HomeProps) {
             </Card>
           </Pressable>
         ))}
-      <Text style={styles.section}>Upcoming pickup</Text>
+      <Section title="Upcoming pickup" />
       {upcoming.length === 0 ? <Empty text="No pickup booked yet." /> : null}
       {upcoming.map((item) => (
         <Card key={item.id}>
@@ -60,7 +60,7 @@ export function FarmerHome({ navigation }: HomeProps) {
           <StatusBadge status={item.bookingAccepted ? "ACCEPTED" : "SCHEDULED"} />
         </Card>
       ))}
-      <Text style={styles.section}>Payments</Text>
+      <Section title="Payments" />
       {settlements.length === 0 ? <Empty text="No completed payment yet." /> : null}
       {settlements.map((item) => (
         <Pressable key={item.id} onPress={() => navigation.navigate("SettlementDetail", { id: item.id })}>
@@ -215,7 +215,7 @@ export function NotificationsScreen() {
           <Text style={styles.meta}>{item.body}</Text>
         </Card>
       ))}
-      <Text style={styles.section}>SMS</Text>
+      <Section title="SMS" />
       {sms.length === 0 ? <Empty text="No SMS yet." /> : null}
       {sms.map((item) => (
         <Card key={item.id}>
@@ -247,12 +247,11 @@ export function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  section: { fontSize: 18, fontWeight: "700", color: colors.ink, marginTop: 16, marginBottom: 8 },
-  cardTitle: { fontSize: 18, fontWeight: "700", color: colors.ink, marginBottom: 4 },
-  meta: { color: colors.muted, marginBottom: 8, lineHeight: 20 },
-  links: { marginTop: 8 },
-  label: { fontWeight: "700", marginBottom: 8, color: colors.ink },
-  wrap: { flexDirection: "row", flexWrap: "wrap" },
-  note: { color: colors.muted, marginTop: 8, lineHeight: 20 },
-  phone: { fontFamily: "monospace", fontSize: 16, lineHeight: 24, color: colors.ink },
+  cardTitle: { fontSize: 17, fontWeight: "700", letterSpacing: -0.2, color: colors.ink, marginBottom: 2 },
+  meta: { color: colors.muted, marginBottom: 4, lineHeight: 20, fontSize: 14 },
+  links: { marginTop: 4 },
+  label: { fontSize: 12, fontWeight: "700", letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 8, color: colors.muted },
+  wrap: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8 },
+  note: { color: colors.muted, marginTop: 10, lineHeight: 20 },
+  phone: { fontFamily: "monospace", fontSize: 15, lineHeight: 23, color: colors.ink },
 });

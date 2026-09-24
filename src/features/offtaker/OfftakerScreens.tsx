@@ -233,6 +233,6 @@ export function OfftakerProfile() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 18, fontWeight: "700", color: colors.ink, marginBottom: 4 },
-  meta: { color: colors.muted, marginBottom: 8, lineHeight: 20 },
+  title: { fontSize: 17, fontWeight: "700", letterSpacing: -0.2, color: colors.ink, marginBottom: 2 },
+  meta: { color: colors.muted, marginBottom: 4, lineHeight: 20, fontSize: 14 },
 });

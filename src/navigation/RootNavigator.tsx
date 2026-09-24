@@ -40,9 +40,10 @@ const AgentStack = createNativeStackNavigator<AgentParamList>();
 const DriverStack = createNativeStackNavigator<DriverParamList>();
 
 const screenOptions = {
-  headerStyle: { backgroundColor: colors.primaryDark },
-  headerTintColor: colors.white,
-  headerTitleStyle: { fontWeight: "700" as const },
+  headerStyle: { backgroundColor: colors.surface },
+  headerTintColor: colors.ink,
+  headerShadowVisible: false,
+  headerTitleStyle: { fontWeight: "700" as const, fontSize: 17, color: colors.ink },
   contentStyle: { backgroundColor: colors.bg },
 };
 
