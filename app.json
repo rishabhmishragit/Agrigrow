@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "CryoChain",
+    "slug": "cryochain",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "cryochain",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cryochain.ghana",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "CryoChain uses your location to confirm collection and delivery.",
+        "NSCameraUsageDescription": "CryoChain uses the camera to capture produce and delivery evidence."
+      }
+    },
+    "android": {
+      "package": "com.cryochain.ghana",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A4634",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "CAMERA"],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CryoChain uses your location to confirm collection and delivery."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CryoChain uses photos as evidence of quality and delivery.",
+          "cameraPermission": "CryoChain uses the camera to capture produce and delivery evidence."
+        }
+      ]
+    ]
+  }
+}
