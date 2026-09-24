@@ -27,7 +27,7 @@ export async function acceptDelivery(
 ): Promise<CommandResult<{ orderState: string }>> {
   const db = begin(source);
   const user = actor(db, userId);
-  requireRole(user, ["offtaker"], "Only the offtaker can accept a delivery.");
+  requireRole(user, ["offtaker"], "Only the buyer can accept a delivery.");
   const commitment = must(db.commitments.find((item) => item.lotId === lotId), "Commitment was not found.");
   if (offtakerForUser(db, user.id).id !== commitment.offtakerId) {
     throw new AppError("FORBIDDEN", "You can only accept your own delivery.");
@@ -39,7 +39,7 @@ export async function acceptDelivery(
   setOrder(db, ports, user, lotId, "ACCEPTED", "DELIVERY_ACCEPTED");
   const lot = must(db.lots.find((item) => item.id === lotId), "Lot was not found.");
   for (const ops of db.users.filter((item) => item.role === "ops")) {
-    notify(db, ports, ops.id, "Delivery accepted", `${lot.code} was accepted. Escrow can be released.`, "Lot", lot.id);
+    notify(db, ports, ops.id, "Delivery accepted", `${lot.code} was accepted. The farmer payout can be approved.`, "Lot", lot.id);
   }
   for (const consignment of db.consignments.filter((item) => item.lotId === lot.id)) {
     const farmerUser = userByFarmer(db, consignment.farmerId);
@@ -68,7 +68,7 @@ export async function releaseEscrow(
 ): Promise<CommandResult<ReleaseResult>> {
   const db = begin(source);
   const user = actor(db, userId);
-  requireRole(user, ["ops"], "Only the operations team can release escrow.");
+  requireRole(user, ["ops"], "Only the operations team can approve a payout.");
   const lot = must(db.lots.find((item) => item.id === lotId), "Lot was not found.");
   const commitment = must(db.commitments.find((item) => item.lotId === lot.id), "Commitment was not found.");
   const escrow = must(db.escrows.find((item) => item.commitmentId === commitment.id), "Escrow reference was not found.");
@@ -87,7 +87,7 @@ export async function releaseEscrow(
   if (!["ACCEPTED", "ESCROW_RELEASE_REQUESTED", "ESCROW_RELEASED", "SETTLEMENT_PROCESSING"].includes(state)) {
     throw new AppError(
       "INVALID_STATE",
-      "Escrow can be released only after the offtaker accepts the delivery.",
+      "A payout can be approved only after the buyer accepts the delivery.",
     );
   }
   const consignments = db.consignments.filter((item) => item.lotId === lot.id);
@@ -185,7 +185,7 @@ export async function releaseEscrow(
         userId: farmerUser.id,
         event: "payout_completed",
         idempotencyKey: `sms:payout:${settlement.id}`,
-        body: `CryoChain paid GHS ${settlement.netSettlement.toFixed(2)} for ${produce?.name ?? "your produce"}. Gross ${settlement.grossValue.toFixed(2)} minus collection fee ${settlement.collectionFee.toFixed(2)}. Ref ${settlement.paymentReference}.`,
+        body: `CryoChain paid GHS ${settlement.netSettlement.toFixed(2)} for ${produce?.name ?? "your produce"}. Ref ${settlement.paymentReference}.`,
       });
     }
   } else if (!allPaid) {

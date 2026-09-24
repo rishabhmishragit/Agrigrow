@@ -71,17 +71,15 @@ export function LotDetailScreen({ route, navigation }: LotProps) {
       </Card>
       {instruction ? (
         <Card>
-          <Text style={styles.title}>Escrow requirement</Text>
+          <Text style={styles.title}>Order total</Text>
           <MoneyRow label="Lot value" value={instruction.lotValue} />
-          <MoneyRow label="Collection fees" value={instruction.collectionFees} />
           <MoneyRow label="Other charges" value={instruction.otherCharges} />
-          <MoneyRow label="Total to transfer" value={instruction.totalEscrowRequirement} strong />
-          <Text style={styles.meta}>This amount is an instruction to the external trust account. CryoChain does not hold the money.</Text>
+          <MoneyRow label="Order total" value={instruction.totalEscrowRequirement} strong />
         </Card>
       ) : null}
       {!commitment ? (
         <Button
-          label={busy ? "Saving" : "Commit to this lot"}
+          label={busy ? "Saving" : "Order and pay"}
           disabled={busy}
           onPress={() =>
             void run((state, ports, user) => commitToLot(state, ports, user.id, lot.id)).then(async (created) => {
@@ -96,12 +94,11 @@ export function LotDetailScreen({ route, navigation }: LotProps) {
       )}
       {escrow ? (
         <Card>
-          <KeyValue label="Bank" value={escrow.bankLabel} />
           <KeyValue label="Reference" value={escrow.externalReference} />
           <KeyValue label="Status" value={escrow.status} />
           {escrow.status === "PENDING" ? (
             <>
-              <Button label="Simulate external bank confirmation" tone="secondary" onPress={() => simulateFunding(escrow.externalReference)} />
+              <Button label="Simulate payment confirmation" tone="secondary" onPress={() => simulateFunding(escrow.externalReference)} />
               <Button
                 label="Check funding"
                 disabled={busy}
@@ -172,7 +169,7 @@ export function OrderDetailScreen({ route }: OrderProps) {
           onPress={() => void run((state, ports, user) => acceptDelivery(state, ports, user.id, lot.id))}
         />
       ) : null}
-      {commitment.orderState === "ACCEPTED" ? <Text style={styles.meta}>Accepted. Operations can release escrow.</Text> : null}
+      {commitment.orderState === "ACCEPTED" ? <Text style={styles.meta}>Accepted. Operations can approve the farmer payout.</Text> : null}
     </Screen>
   );
 }

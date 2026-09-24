@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useCryo } from "../state/CryoProvider";
@@ -49,6 +50,10 @@ const screenOptions = {
 
 export function RootNavigator() {
   const cryo = useCryo();
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.title = !cryo.user ? "CryoChain" : cryo.user.role === "ops" ? "CryoChain Operations" : "CryoChain";
+  }, [cryo.user]);
   if (!cryo.ready) {
     return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   }

@@ -248,7 +248,7 @@ export async function commitToLot(
 ): Promise<CommandResult<Commitment>> {
   const db = begin(source);
   const user = actor(db, userId);
-  requireRole(user, ["offtaker"], "Only an offtaker can commit to a lot.");
+  requireRole(user, ["offtaker"], "Only a buyer can commit to a lot.");
   const offtaker = offtakerForUser(db, user.id);
   const lot = must(db.lots.find((item) => item.id === lotId), "Lot was not found.");
   if (lot.status !== "PUBLISHED" || lot.orderState !== "LOT_CREATED") {
@@ -323,7 +323,7 @@ export async function initiateEscrow(
     ports,
     user.id,
     "Escrow pending",
-    `Transfer ${escrow.instructedAmountGhs.toFixed(2)} GHS to the external trust account. Reference ${escrow.externalReference}.`,
+    `Pay GHS ${escrow.instructedAmountGhs.toFixed(2)} to CryoChain before collection. Reference ${escrow.externalReference}.`,
     "Escrow",
     escrow.id,
   );
@@ -338,7 +338,7 @@ export async function confirmEscrowFunding(
 ): Promise<CommandResult<Escrow>> {
   const db = begin(source);
   const user = actor(db, userId);
-  requireRole(user, ["offtaker", "ops"], "You cannot confirm escrow funding.");
+  requireRole(user, ["offtaker", "ops"], "You cannot confirm this payment.");
   const escrow = must(db.escrows.find((item) => item.id === escrowId), "Escrow was not found.");
   const commitment = must(
     db.commitments.find((item) => item.id === escrow.commitmentId),
@@ -406,7 +406,7 @@ export async function scheduleCollection(
   if (orderStateOf(db, lot.id) !== "ESCROW_FUNDED" || escrow?.status !== "FUNDED") {
     throw new AppError(
       "ESCROW_NOT_FUNDED",
-      "Collection cannot begin because escrow funding has not been confirmed.",
+      "Collection cannot begin because payment has not been confirmed.",
     );
   }
   if (db.collections.some((item) => item.lotId === lot.id)) {
@@ -505,7 +505,7 @@ export async function scheduleCollection(
   });
   notify(db, ports, agent.userId, "Assignment", `Collection ${lot.code} is assigned to you.`, "Collection", collectionId);
   notify(db, ports, driver.userId, "Manifest assigned", `Route ${lot.origin} to ${lot.destination} is on your manifest.`, "Manifest", manifestId);
-  const offtaker = must(db.offtakerProfiles.find((item) => item.id === commitment.offtakerId), "Offtaker was not found.");
+  const offtaker = must(db.offtakerProfiles.find((item) => item.id === commitment.offtakerId), "Buyer was not found.");
   notify(db, ports, offtaker.userId, "Collection scheduled", `${lot.code} collection is scheduled.`, "Lot", lot.id);
   for (const consignment of consignments) {
     const farmerUser = userByFarmer(db, consignment.farmerId);
@@ -570,7 +570,7 @@ export async function createRequirement(
 ): Promise<CommandResult<StandingRequirement>> {
   const db = begin(source);
   const user = actor(db, userId);
-  requireRole(user, ["offtaker"], "Only an offtaker can post a standing requirement.");
+  requireRole(user, ["offtaker"], "Only a buyer can post a standing requirement.");
   const offtaker = offtakerForUser(db, user.id);
   if (!db.produce.some((item) => item.id === input.produceId)) {
     throw new AppError("NOT_FOUND", "Choose a produce type from the list.");

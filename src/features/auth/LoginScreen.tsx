@@ -8,13 +8,13 @@ import { colors } from "../../theme";
 
 const DEMOS = [
   ["Farmer", "farmer@test.com", "List produce and follow payouts"],
-  ["Offtaker", "offtaker@test.com", "Commit to lots and fund escrow"],
+  ["Buyer", "offtaker@test.com", "Order lots and pay before collection"],
   ["Field agent", "agent@test.com", "Grade and weigh at the farm gate"],
   ["Driver", "driver@test.com", "Collect, record temperature, deliver"],
-  ["Operations", "ops@test.com", "Aggregate, dispatch, release escrow"],
+  ["Operations", "ops@test.com", "Allocate, dispatch, and approve payouts"],
 ];
 
-const STEPS = ["List", "Aggregate", "Escrow", "Verify", "Deliver", "Settle"];
+const STEPS = ["Order and pay", "Allocate", "Weigh and grade", "Collect cold", "Deliver", "Pay farmers"];
 
 export function LoginScreen() {
   const { signIn, requestOtp, signInPhone, busy } = useCryo();
@@ -33,7 +33,7 @@ export function LoginScreen() {
           <Text style={styles.mark}>CryoChain</Text>
           <Text style={styles.brandTitle}>Cold-chain aggregation for Ghana.</Text>
           <Text style={styles.brandCopy}>
-            One operational system for farmers, buyers, field agents, drivers and operations. Money stays in an external trust account.
+            One operational system for farmers, buyers, field agents, drivers and operations. Buyers pay before collection. Farmers are paid within 24 hours of delivery.
           </Text>
           <View style={styles.steps}>
             {STEPS.map((step, index) => (
@@ -47,7 +47,7 @@ export function LoginScreen() {
         <ScrollView style={styles.formPane} contentContainerStyle={styles.formWrap}>
           <View style={styles.form}>
             <Text style={styles.formKicker}>Sign in</Text>
-            <Text style={styles.formTitle}>{phoneMode ? "Phone code" : "Development access"}</Text>
+            <Text style={styles.formTitle}>{phoneMode ? "Phone code" : "Choose a role to explore"}</Text>
             <Text style={styles.formHelp}>
               Password for every demo account: {config.demoPassword}. These accounts must not be used in production.
             </Text>

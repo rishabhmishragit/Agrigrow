@@ -1,6 +1,6 @@
 # CryoChain
 
-One React Native application for CryoChain Ghana. Farmers, offtakers, field agents, drivers and operations each get a role inside the same app.
+One React Native application for CryoChain Ghana. Farmers, buyers, field agents, drivers and operations each get a role inside the same app.
 
 ## Run the demo
 
@@ -24,10 +24,9 @@ Copy `.env.example` to `.env` when you are ready to point the app at real provid
 
 ## What is enforced
 
-- A collection cannot be scheduled until external escrow funding is confirmed.
-- Only operations can release escrow, and only after the offtaker accepts delivery.
-- The app stores an escrow reference and a funding instruction. It does not store a wallet or an escrow balance.
-- Farmer settlement is calculated per consignment. The collection fee is shared by weight at the stop and capped at 5% of that farmer's own consignment value.
+- A collection cannot be scheduled until the buyer payment is confirmed.
+- Only operations can approve the farmer payout, and only after the buyer accepts delivery.
+- The buyer pays CryoChain. Farmer settlement is the consignment gross. No collection fee is deducted from the farmer.
 - Field and driver writes are saved locally first and replayed through idempotency keys.
 
 The same rules are covered by `npm test`.

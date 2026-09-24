@@ -66,7 +66,7 @@ export function farmerForUser(db: AppDatabase, userId: string): FarmerProfile {
 export function offtakerForUser(db: AppDatabase, userId: string): OfftakerProfile {
   return must(
     db.offtakerProfiles.find((item) => item.userId === userId),
-    "Offtaker profile was not found.",
+    "Buyer profile was not found.",
   );
 }
 

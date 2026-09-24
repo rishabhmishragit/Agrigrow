@@ -115,9 +115,9 @@ export function createSeed(): AppDatabase {
     { id: "a_ibrahim", userId: "u_ibrahim", baseLocation: "Tamale", assignedArea: "Tamale" },
   );
   db.vehicles.push(
-    { id: "v1", plate: "GS 2140-26", type: "Refrigerated truck", coldCapable: true, ownerLabel: "Charter cold vehicle" },
-    { id: "v2", plate: "GS 1182-25", type: "Refrigerated truck", coldCapable: true, ownerLabel: "Charter cold vehicle" },
-    { id: "v3", plate: "GT 3304-24", type: "Insulated van", coldCapable: true, ownerLabel: "Charter cold vehicle" },
+    { id: "v1", plate: "GS 2140-26", type: "Refrigerated truck", coldCapable: true, ownerLabel: "CryoChain truck" },
+    { id: "v2", plate: "GS 1182-25", type: "Refrigerated truck", coldCapable: true, ownerLabel: "CryoChain truck" },
+    { id: "v3", plate: "GT 3304-24", type: "Insulated van", coldCapable: true, ownerLabel: "CryoChain truck" },
   );
   db.driverProfiles.push(
     { id: "d_samuel", userId: "u_samuel", licenseRef: "DL-DEMO-1001", vehicleId: "v1" },
@@ -223,11 +223,11 @@ export function createSeed(): AppDatabase {
   );
 
   db.escrows.push(
-    { id: "esc_pending", commitmentId: "cm_escrow", provider: "mock", bankLabel: "External bank trust account (bank not yet selected)", externalReference: "ESC-2402", status: "PENDING", instructedAmountGhs: roundGhs(800 * 3.2 + 400 * 3.2 + 70), createdAt: NOW },
-    { id: "esc_job", commitmentId: "cm_job", provider: "mock", bankLabel: "External bank trust account (bank not yet selected)", externalReference: "ESC-2403", status: "FUNDED", instructedAmountGhs: roundGhs(250 * 6 + 350 * 6 + 90), externalTransactionRef: "BANK-TX-2403", fundedAt: NOW, createdAt: NOW },
-    { id: "esc_transit", commitmentId: "cm_transit", provider: "mock", bankLabel: "External bank trust account (bank not yet selected)", externalReference: "ESC-2394", status: "FUNDED", instructedAmountGhs: roundGhs(280 * 4.8 + 420 * 4.8 + 80), externalTransactionRef: "BANK-TX-2394", fundedAt: NOW, createdAt: NOW },
-    { id: "esc_accept", commitmentId: "cm_accept", provider: "mock", bankLabel: "External bank trust account (bank not yet selected)", externalReference: "ESC-2388", status: "FUNDED", instructedAmountGhs: roundGhs(40 * 8 + 360 * 8 + 200), externalTransactionRef: "BANK-TX-2388", fundedAt: NOW, createdAt: NOW },
-    { id: "esc_paid", commitmentId: "cm_paid", provider: "mock", bankLabel: "External bank trust account (bank not yet selected)", externalReference: "ESC-2360", status: "RELEASED", instructedAmountGhs: roundGhs(200 * 5 + 600 * 5 + 100), externalTransactionRef: "BANK-TX-2360", fundedAt: "2026-09-17T10:00:00.000Z", releaseRequestedAt: "2026-09-18T16:00:00.000Z", releasedAt: "2026-09-18T16:05:00.000Z", releaseIdempotencyKey: "escrow-release:esc_paid", createdAt: NOW },
+    { id: "esc_pending", commitmentId: "cm_escrow", provider: "mock", bankLabel: "CryoChain", externalReference: "PAY-2402", status: "PENDING", instructedAmountGhs: roundGhs(800 * 3.2 + 400 * 3.2), createdAt: NOW },
+    { id: "esc_job", commitmentId: "cm_job", provider: "mock", bankLabel: "CryoChain", externalReference: "PAY-2403", status: "FUNDED", instructedAmountGhs: roundGhs(250 * 6 + 350 * 6), externalTransactionRef: "PAY-TX-2403", fundedAt: NOW, createdAt: NOW },
+    { id: "esc_transit", commitmentId: "cm_transit", provider: "mock", bankLabel: "CryoChain", externalReference: "PAY-2394", status: "FUNDED", instructedAmountGhs: roundGhs(280 * 4.8 + 420 * 4.8), externalTransactionRef: "PAY-TX-2394", fundedAt: NOW, createdAt: NOW },
+    { id: "esc_accept", commitmentId: "cm_accept", provider: "mock", bankLabel: "CryoChain", externalReference: "PAY-2388", status: "FUNDED", instructedAmountGhs: roundGhs(40 * 8 + 360 * 8), externalTransactionRef: "PAY-TX-2388", fundedAt: NOW, createdAt: NOW },
+    { id: "esc_paid", commitmentId: "cm_paid", provider: "mock", bankLabel: "CryoChain", externalReference: "PAY-2360", status: "RELEASED", instructedAmountGhs: roundGhs(200 * 5 + 600 * 5), externalTransactionRef: "PAY-TX-2360", fundedAt: "2026-09-17T10:00:00.000Z", releaseRequestedAt: "2026-09-18T16:00:00.000Z", releasedAt: "2026-09-18T16:05:00.000Z", releaseIdempotencyKey: "escrow-release:esc_paid", createdAt: NOW },
   );
 
   db.collections.push(
@@ -350,11 +350,11 @@ export function createSeed(): AppDatabase {
   });
 
   db.exceptions.push(
-    { id: "ex1", type: "Escrow delay", severity: "MEDIUM", entityType: "Escrow", entityId: "esc_pending", description: "LC-2402 funding has not been confirmed by the external bank.", createdBy: "u_ops", status: "OPEN", createdAt: NOW },
-    { id: "ex2", type: "Driver delay", severity: "LOW", entityType: "Manifest", entityId: "mf_today", description: "Charter vehicle GS 2140-26 reported a late departure from Kumasi.", createdBy: "u_ops", assignedTo: "u_samuel", status: "ASSIGNED", createdAt: NOW },
+    { id: "ex1", type: "Payment not yet confirmed", severity: "MEDIUM", entityType: "Escrow", entityId: "esc_pending", description: "LC-2402 payment has not been confirmed yet.", createdBy: "u_ops", status: "OPEN", createdAt: NOW },
+    { id: "ex2", type: "Driver delay", severity: "LOW", entityType: "Manifest", entityId: "mf_today", description: "Truck GS 2140-26 reported a late departure from Kumasi.", createdBy: "u_ops", assignedTo: "u_samuel", status: "ASSIGNED", createdAt: NOW },
     { id: "ex3", type: "Quality failure", severity: "HIGH", entityType: "Consignment", entityId: "c_kofi_tr", description: "10 kg of Kofi Adu's tomatoes were rejected at grading.", createdBy: "u_linda", status: "IN_PROGRESS", createdAt: NOW },
     { id: "ex4", type: "Farmer unavailable", severity: "MEDIUM", entityType: "FarmerProfile", entityId: "f_esi", description: "Esi Quaye asked to move the mango pickup later in the window.", createdBy: "u_nana", status: "RESOLVED", resolution: "Pickup kept inside the same window.", createdAt: NOW, resolvedAt: NOW },
-    { id: "ex5", type: "Sync conflict", severity: "LOW", entityType: "FieldInspection", entityId: "ins_akua", description: "An earlier offline retry was ignored because the inspection was already synced.", createdBy: "u_ops", status: "CLOSED", resolution: "Idempotency key matched the stored inspection.", createdAt: NOW, resolvedAt: NOW },
+    { id: "ex5", type: "Sync conflict", severity: "LOW", entityType: "FieldInspection", entityId: "ins_akua", description: "Two versions of this weight exist. Both kept. Waiting for the node manager.", createdBy: "u_ops", status: "CLOSED", resolution: "Both versions were kept for the node manager.", createdAt: NOW, resolvedAt: NOW },
   );
 
   db.notifications.push(
@@ -362,12 +362,12 @@ export function createSeed(): AppDatabase {
     { id: "n2", userId: "u_nana", channel: "in_app", title: "Assignment", body: "LC-2403 mango collection is assigned to you today.", read: false, createdAt: NOW, entityType: "Collection", entityId: "col_job" },
     { id: "n3", userId: "u_samuel", channel: "in_app", title: "Manifest assigned", body: "MF-0923 is your route today.", read: false, createdAt: NOW, entityType: "Manifest", entityId: "mf_today" },
     { id: "n4", userId: "u_accra", channel: "in_app", title: "Lot available", body: "LC-2401 tomatoes are ready for commitment.", read: false, createdAt: NOW, entityType: "Lot", entityId: "lot_pub" },
-    { id: "n5", userId: "u_ops", channel: "in_app", title: "Delivery accepted", body: "LC-2388 was accepted. Escrow can be released.", read: false, createdAt: "2026-09-22T16:00:00.000Z", entityType: "Lot", entityId: "lot_accept" },
+    { id: "n5", userId: "u_ops", channel: "in_app", title: "Delivery accepted", body: "LC-2388 was accepted. The farmer payout can be approved.", read: false, createdAt: "2026-09-22T16:00:00.000Z", entityType: "Lot", entityId: "lot_accept" },
   );
   db.smsMessages.push({
     id: "sms1",
     to: "+233244001001",
-    body: `CryoChain paid GHS ${akuaPay.netSettlement.toFixed(2)} for Tomato. Gross ${akuaPay.grossValue.toFixed(2)} minus collection fee ${akuaPay.collectionFee.toFixed(2)}. Ref PAY-2360-AKUA.`,
+    body: `CryoChain paid GHS ${akuaPay.netSettlement.toFixed(2)} for Tomato. Ref PAY-2360-AKUA.`,
     status: "sent",
     provider: "mock",
     providerMessageId: "SMS-SEED-1",

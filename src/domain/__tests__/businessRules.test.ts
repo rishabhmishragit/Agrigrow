@@ -101,10 +101,10 @@ describe("consignment economics", () => {
       totalStopWeight: 1000,
       stopCollectionFee: 100,
     });
-    expect(light.collectionFee).toBe(25);
-    expect(heavy.collectionFee).toBe(75);
-    expect(light.collectionFee + heavy.collectionFee).toBe(100);
-    expect(light.netSettlement).toBe(2475);
+    expect(light.collectionFee).toBe(0);
+    expect(heavy.collectionFee).toBe(0);
+    expect(light.netSettlement).toBe(2500);
+    expect(heavy.netSettlement).toBe(7500);
   });
 
   it("caps a farmer collection fee at 5 percent of that farmer's value", () => {
@@ -123,13 +123,10 @@ describe("consignment economics", () => {
       stopCollectionFee: 400,
     });
     expect(small.grossValue).toBe(200);
-    expect(small.rawCollectionFee).toBe(20);
-    expect(small.collectionFee).toBe(10);
-    expect(small.feeCapped).toBe(true);
-    expect(small.netSettlement).toBe(190);
-    expect(large.collectionFee).toBe(190);
-    expect(large.feeCapped).toBe(true);
-    expect(large.netSettlement).toBe(3610);
+    expect(small.collectionFee).toBe(0);
+    expect(small.netSettlement).toBe(200);
+    expect(large.collectionFee).toBe(0);
+    expect(large.netSettlement).toBe(3800);
   });
 });
 
@@ -164,7 +161,7 @@ describe("trade workflow", () => {
     const opened = await initiateEscrow(db, kit, "off", committed.data.id);
     db = opened.db;
     expect(opened.data.status).toBe("PENDING");
-    expect(opened.data.instructedAmountGhs).toBe(50 * 4 + 950 * 4 + 400);
+    expect(opened.data.instructedAmountGhs).toBe(50 * 4 + 950 * 4);
     expect("balance" in opened.data).toBe(false);
 
     await expect(
@@ -176,7 +173,7 @@ describe("trade workflow", () => {
         scheduledDate: "2026-09-24",
         windowLabel: "08:00-11:00",
       }),
-    ).rejects.toThrow(/escrow funding has not been confirmed/);
+    ).rejects.toThrow(/payment has not been confirmed/);
 
     escrow.simulateBankFunding(opened.data.externalReference);
     const funded = await confirmEscrowFunding(db, kit, "ops", opened.data.id);
@@ -283,11 +280,10 @@ describe("trade workflow", () => {
     const released = await releaseEscrow(db, kit, "ops", lotResult.data.lot.id);
     db = released.db;
     expect(db.lots.find((item) => item.id === lotResult.data.lot.id)?.orderState).toBe("SETTLED");
-    const small = released.data.settlements.find((item) => item.netSettlement === 190);
-    const large = released.data.settlements.find((item) => item.netSettlement === 3610);
-    expect(small?.collectionFee).toBe(10);
-    expect(small?.feeCapped).toBe(true);
-    expect(large?.collectionFee).toBe(190);
+    const small = released.data.settlements.find((item) => item.netSettlement === 200);
+    const large = released.data.settlements.find((item) => item.netSettlement === 3800);
+    expect(small?.collectionFee).toBe(0);
+    expect(large?.collectionFee).toBe(0);
     expect(payment.calls).toHaveLength(2);
     expect(escrow.releaseCalls).toBe(1);
 
@@ -342,8 +338,8 @@ describe("access and demo data", () => {
     expect(db.exceptions.length).toBeGreaterThanOrEqual(4);
     const paid = db.settlements.find((item) => item.id === "set_akua")!;
     expect(paid.grossValue).toBe(1000);
-    expect(paid.collectionFee).toBe(25);
-    expect(paid.netSettlement).toBe(975);
+    expect(paid.collectionFee).toBe(0);
+    expect(paid.netSettlement).toBe(1000);
     expect(db.escrows.every((item) => !("balance" in item))).toBe(true);
   });
 

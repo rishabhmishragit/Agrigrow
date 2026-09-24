@@ -31,7 +31,7 @@ export function FarmerHome({ navigation }: HomeProps) {
   const settlements = db.settlements.filter((item) => item.farmerId === farmer?.id);
   const upcoming = db.consignments.filter((item) => item.farmerId === farmer?.id && item.status === "SCHEDULED");
   return (
-    <Screen title={`Hello${user ? `, ${user.fullName.split(" ")[0]}` : ""}`} subtitle="List produce, follow pickups, and see how you were paid.">
+    <Screen title={`Hello${user ? `, ${user.fullName.split(" ")[0]}` : ""}`} subtitle="Your pickups, your prices, your payments.">
       <Button label="List produce" onPress={() => navigation.navigate("NewListing")} />
       <View style={styles.links}>
         <Button label="Phone menu (USSD)" tone="secondary" onPress={() => navigation.navigate("Ussd")} />
@@ -156,8 +156,6 @@ export function SettlementDetail({ route }: SettlementProps) {
         <KeyValue label="Confirmed weight" value={`${consignment.acceptedWeight ?? consignment.confirmedWeight ?? "—"} ${consignment.unit}`} />
         <KeyValue label="Price" value={`${formatGhs(consignment.agreedPricePerUnit)} per ${consignment.unit}`} />
         <MoneyRow label="Gross value" value={settlement.grossValue} />
-        <MoneyRow label="Allocated collection fee" value={settlement.collectionFee} />
-        {settlement.feeCapped ? <Text style={styles.note}>The fee was capped at 5% of your own consignment value.</Text> : null}
         <MoneyRow label="Net settlement" value={settlement.netSettlement} strong />
         <KeyValue label="Status" value={settlement.status} />
         <KeyValue label="Paid" value={settlement.paidAt ?? "Not yet"} />

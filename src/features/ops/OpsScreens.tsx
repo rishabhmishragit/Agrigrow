@@ -22,7 +22,7 @@ const SECTIONS = [
   "Listings",
   "Lots",
   "Commitments",
-  "Escrow",
+  "Payments",
   "Collections",
   "Manifests",
   "Deliveries",
@@ -37,7 +37,7 @@ type Section = (typeof SECTIONS)[number];
 
 const NAV = [
   { label: "Overview", items: ["Dashboard"] as Section[] },
-  { label: "Trade", items: ["Listings", "Lots", "Commitments", "Escrow", "Settlements"] as Section[] },
+  { label: "Trade", items: ["Listings", "Lots", "Commitments", "Payments", "Settlements"] as Section[] },
   { label: "Custody", items: ["Collections", "Manifests", "Deliveries"] as Section[] },
   { label: "Control", items: ["Exceptions", "People", "Audit", "Settings"] as Section[] },
 ];
@@ -77,7 +77,7 @@ export function OpsConsole() {
         {section === "Listings" ? <Listings /> : null}
         {section === "Lots" ? <Lots /> : null}
         {section === "Commitments" ? <Commitments /> : null}
-        {section === "Escrow" ? <EscrowPanel /> : null}
+        {section === "Payments" ? <EscrowPanel /> : null}
         {section === "Collections" ? <Collections /> : null}
         {section === "Manifests" ? <Manifests /> : null}
         {section === "Deliveries" ? <Deliveries /> : null}
@@ -99,8 +99,8 @@ function Dashboard() {
     ["Active listings", kpis.activeListings],
     ["Lots awaiting commitment", kpis.lotsAwaitingCommitment],
     ["Lots committed", kpis.lotsCommitted],
-    ["Escrow pending", kpis.escrowPending],
-    ["Escrow funded", kpis.escrowFunded],
+    ["Awaiting payment", kpis.escrowPending],
+    ["Paid", kpis.escrowFunded],
     ["Collections today", kpis.collectionsToday],
     ["Deliveries today", kpis.deliveriesToday],
     ["Exceptions", kpis.exceptions],
@@ -109,7 +109,7 @@ function Dashboard() {
     ["Completed settlements", kpis.completedSettlements],
   ];
   return (
-    <Screen title="Dashboard" subtitle="Supply, escrow, custody and settlement.">
+    <Screen title="Dashboard" subtitle="Supply, payment, custody and settlement.">
       <View style={styles.grid}>
         {cards.map(([label, value]) => (
           <Metric key={label} label={label} value={value} />
@@ -159,7 +159,7 @@ function Listings() {
           {chosen.map((item, index) => (
             <KeyValue key={item.id} label={farmerName(db, item.farmerId)} value={`${item.quantity} kg · net ${formatGhs(preview.rows[index].netSettlement)}`} />
           ))}
-          <MoneyRow label="Estimated escrow requirement" value={preview.instruction.totalEscrowRequirement} strong />
+          <MoneyRow label="Estimated order total" value={preview.instruction.totalEscrowRequirement} strong />
         </Card>
       ) : null}
       <Button
@@ -228,15 +228,14 @@ function EscrowPanel() {
   const { db, run, busy } = useCryo();
   const ready = db.lots.filter((item) => item.orderState === "ACCEPTED");
   return (
-    <Screen title="Escrow" subtitle="Release is allowed only after acceptance, and only for operations.">
+    <Screen title="Payments" subtitle="Payout is allowed only after acceptance, and only for operations.">
       {db.escrows.map((escrow) => {
         const commitment = db.commitments.find((item) => item.id === escrow.commitmentId);
         const lot = db.lots.find((item) => item.id === commitment?.lotId);
         return (
           <Card key={escrow.id}>
             <Text style={styles.rowTitle}>{lot?.code} · {escrow.externalReference}</Text>
-            <KeyValue label="Bank" value={escrow.bankLabel} />
-            <KeyValue label="Instruction" value={formatGhs(escrow.instructedAmountGhs)} />
+            <KeyValue label="Amount" value={formatGhs(escrow.instructedAmountGhs)} />
             <StatusBadge status={escrow.status} />
           </Card>
         );
@@ -245,7 +244,7 @@ function EscrowPanel() {
         const instruction = escrowInstructionForLot(db, lot.id);
         return (
           <Card key={lot.id}>
-            <Text style={styles.rowTitle}>Release {lot.code}</Text>
+            <Text style={styles.rowTitle}>Payout {lot.code}</Text>
             <Text style={styles.meta}>Accepted {db.commitments.find((item) => item.lotId === lot.id)?.acceptedAt}</Text>
             {lotConsignments(db, lot.id).map((item) => {
               const preview = previewConsignment(db, item);
@@ -255,16 +254,15 @@ function EscrowPanel() {
                   {preview ? (
                     <>
                       <MoneyRow label="Gross" value={preview.grossValue} />
-                      <MoneyRow label={preview.feeCapped ? "Collection fee (capped at 5%)" : "Collection fee"} value={preview.collectionFee} />
                       <MoneyRow label="Net to farmer" value={preview.netSettlement} strong />
                     </>
                   ) : null}
                 </View>
               );
             })}
-            {instruction ? <MoneyRow label="Escrow instruction" value={instruction.totalEscrowRequirement} /> : null}
+            {instruction ? <MoneyRow label="Order total" value={instruction.totalEscrowRequirement} /> : null}
             <Button
-              label={busy ? "Releasing" : "Release escrow"}
+              label={busy ? "Approving" : "Approve payout"}
               disabled={busy}
               onPress={() => void run((state, ports, user) => releaseEscrow(state, ports, user.id, lot.id))}
             />
@@ -378,7 +376,6 @@ function Settlements() {
         <Card key={item.id}>
           <Text style={styles.rowTitle}>{farmerName(db, item.farmerId)}</Text>
           <MoneyRow label="Gross" value={item.grossValue} />
-          <MoneyRow label="Collection fee" value={item.collectionFee} />
           <MoneyRow label="Net" value={item.netSettlement} strong />
           <KeyValue label="Reference" value={item.paymentReference ?? "—"} />
           <StatusBadge status={item.status} />
@@ -428,7 +425,7 @@ function People() {
       {people.map((item) => (
         <Card key={item.id}>
           <Text style={styles.rowTitle}>{item.fullName}</Text>
-          <Text style={styles.meta}>{item.role} · {item.phone} · {item.location}</Text>
+          <Text style={styles.meta}>{(item.role === "offtaker" ? "Buyer" : item.role.replace(/_/g, " "))} · {item.phone} · {item.location}</Text>
         </Card>
       ))}
     </Screen>

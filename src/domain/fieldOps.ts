@@ -220,7 +220,7 @@ export async function confirmCollection(
   if (!escrowFunded) {
     throw new AppError(
       "ESCROW_NOT_FUNDED",
-      "Collection cannot begin because escrow funding has not been confirmed.",
+      "Collection cannot begin because payment has not been confirmed.",
     );
   }
   if (lotState !== "FIELD_CONFIRMED" && lotState !== "COLLECTED") {
@@ -372,7 +372,7 @@ export async function confirmDelivery(
     return { db, data: proof, message: OFFLINE_MESSAGE };
   }
   await applyDelivery(db, ports, user.id, proof.id, stop.id);
-  return { db, data: proof, message: "Delivery confirmed. The offtaker can now accept the goods." };
+  return { db, data: proof, message: "Delivery confirmed. The buyer can now accept the goods." };
 }
 
 async function applyDelivery(db: AppDatabase, ports: Ports, userId: string, proofId: string, stopId: string): Promise<void> {
@@ -397,7 +397,7 @@ async function applyDelivery(db: AppDatabase, ports: Ports, userId: string, proo
   }
   audit(db, ports, user, "DELIVERY_CONFIRMED", "Delivery", delivery.id, "IN_TRANSIT", "DELIVERED");
   const commitment = must(db.commitments.find((item) => item.lotId === stop.lotId), "Commitment was not found.");
-  const offtaker = must(db.offtakerProfiles.find((item) => item.id === commitment.offtakerId), "Offtaker was not found.");
+  const offtaker = must(db.offtakerProfiles.find((item) => item.id === commitment.offtakerId), "Buyer was not found.");
   const lot = must(db.lots.find((item) => item.id === stop.lotId), "Lot was not found.");
   notify(
     db,

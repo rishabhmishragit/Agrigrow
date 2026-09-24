@@ -30,9 +30,8 @@ function assertNonNegative(value: number, label: string): void {
 }
 
 /**
- * Consignment settlement.
- * Collection fee share = consignment weight / total stop weight × stop fee.
- * The share is then capped at 5% of this farmer's gross consignment value.
+ * Consignment settlement. The farmer is paid the gross value.
+ * No collection fee is deducted.
  */
 export function calculateConsignmentSettlement(
   input: ConsignmentEconomicsInput,
@@ -53,14 +52,11 @@ export function calculateConsignmentSettlement(
   }
 
   const grossValue = roundGhs(input.confirmedWeight * input.pricePerUnit);
-  const rawCollectionFee =
-    input.totalStopWeight === 0
-      ? 0
-      : roundGhs((input.consignmentWeight / input.totalStopWeight) * input.stopCollectionFee);
-  const collectionFeeCap = roundGhs(grossValue * COLLECTION_FEE_CAP_RATIO);
-  const feeCapped = rawCollectionFee > collectionFeeCap;
-  const collectionFee = roundGhs(Math.min(rawCollectionFee, collectionFeeCap));
-  const netSettlement = roundGhs(grossValue - collectionFee - otherDeductions);
+  const rawCollectionFee = 0;
+  const collectionFeeCap = 0;
+  const feeCapped = false;
+  const collectionFee = 0;
+  const netSettlement = roundGhs(grossValue - otherDeductions);
 
   return {
     grossValue,
@@ -87,12 +83,11 @@ export function calculateEscrowInstruction(input: {
   otherCharges: number;
 }): EscrowInstruction {
   const lotValue = roundGhs(input.grossValues.reduce((sum, value) => sum + value, 0));
-  const collectionFees = roundGhs(input.stopCollectionFees.reduce((sum, value) => sum + value, 0));
   const otherCharges = roundGhs(input.otherCharges);
   return {
     lotValue,
-    collectionFees,
+    collectionFees: 0,
     otherCharges,
-    totalEscrowRequirement: roundGhs(lotValue + collectionFees + otherCharges),
+    totalEscrowRequirement: roundGhs(lotValue + otherCharges),
   };
 }

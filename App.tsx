@@ -8,7 +8,12 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <CryoProvider>
-        <NavigationContainer>
+        <NavigationContainer
+          documentTitle={{
+            enabled: true,
+            formatter: (_options, route) => (route?.name === "Ops" ? "CryoChain Operations" : "CryoChain"),
+          }}
+        >
           <RootNavigator />
         </NavigationContainer>
       </CryoProvider>
