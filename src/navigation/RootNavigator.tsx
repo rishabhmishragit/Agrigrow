@@ -59,7 +59,7 @@ export function RootNavigator() {
     return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   }
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, minHeight: 0 }}>
       <SyncBar
         label={cryo.offline ? "Offline" : "Synced"}
         detail={cryo.offline ? "Work continues" : "Online"}

@@ -27,8 +27,8 @@ export function LoginScreen() {
   const [phoneMode, setPhoneMode] = useState(false);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={[styles.shell, wide && styles.shellWide]}>
+    <SafeAreaView style={styles.safe} edges={["bottom"]}>
+      <ScrollView style={styles.shell} contentContainerStyle={[styles.scroll, wide && styles.scrollWide]} keyboardShouldPersistTaps="handled">
         <View style={[styles.brand, wide && styles.brandWide]}>
           <Text style={styles.mark}>CryoChain</Text>
           <Text style={styles.brandTitle}>Cold from the farm gate to your door.</Text>
@@ -44,8 +44,7 @@ export function LoginScreen() {
             ))}
           </View>
         </View>
-        <ScrollView style={styles.formPane} contentContainerStyle={styles.formWrap}>
-          <View style={styles.form}>
+        <View style={[styles.form, wide && styles.formWide]}>
             <Text style={styles.formKicker}>Sign in</Text>
             <Text style={styles.formTitle}>{phoneMode ? "Phone code" : "Choose a role to explore"}</Text>
             <Text style={styles.formHelp}>
@@ -85,19 +84,19 @@ export function LoginScreen() {
                 <Button label="Use a phone code" tone="secondary" onPress={() => setPhoneMode(true)} />
               </>
             )}
-          </View>
-        </ScrollView>
-      </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1, minHeight: 0, backgroundColor: colors.bg },
   shell: { flex: 1 },
-  shellWide: { flexDirection: "row" },
-  brand: { padding: 28, paddingTop: 36, backgroundColor: colors.bg },
-  brandWide: { width: "42%", justifyContent: "center", padding: 48 },
+  scroll: { flexGrow: 1, paddingBottom: 32 },
+  scrollWide: { flexDirection: "row", alignItems: "flex-start" },
+  brand: { padding: 28, paddingTop: 28, backgroundColor: colors.bg },
+  brandWide: { width: "42%", padding: 48 },
   mark: { color: colors.primary, fontSize: 13, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
   brandTitle: { color: colors.ink, fontSize: 32, lineHeight: 37, fontWeight: "500", marginTop: 28, maxWidth: 420 },
   brandCopy: { color: colors.muted, fontSize: 16, lineHeight: 24, marginTop: 8, maxWidth: 420 },
@@ -105,9 +104,8 @@ const styles = StyleSheet.create({
   step: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, minWidth: 88 },
   stepIndex: { color: colors.primary, fontSize: 11, fontWeight: "600" },
   stepLabel: { color: colors.ink, fontSize: 14, fontWeight: "600", marginTop: 2 },
-  formPane: { flex: 1, backgroundColor: colors.bg },
-  formWrap: { flexGrow: 1, padding: 28, justifyContent: "center" },
-  form: { width: "100%", maxWidth: 480, alignSelf: "center", paddingVertical: 12 },
+  form: { width: "100%", maxWidth: 480, alignSelf: "center", paddingHorizontal: 28, paddingBottom: 28 },
+  formWide: { flex: 1, alignSelf: "stretch", paddingTop: 48 },
   formKicker: { color: colors.primary, fontSize: 12, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
   formTitle: { color: colors.ink, fontSize: 28, fontWeight: "700", letterSpacing: -0.5, marginTop: 6 },
   formHelp: { color: colors.muted, lineHeight: 21, marginTop: 8, marginBottom: 16 },
