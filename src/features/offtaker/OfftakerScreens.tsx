@@ -88,32 +88,49 @@ export function MarketScreen({ navigation }: MarketProps) {
   const [category, setCategory] = useState<ProduceCategory | "">("");
   const products = db.produce.filter((item) => item.category === category);
   const previous = db.buyerOrders.filter((item) => item.offtakerId === profile?.id);
+  const gradesFor = (produceId: string) => db.gradeScales.find((item) => item.produceId === produceId)?.grades.map((grade) => grade.label).join(" · ") ?? "";
   return (
     <Screen
-      title={category ? CATEGORIES.find((item) => item.id === category)?.label ?? "Home" : (profile?.organization ?? "Home")}
-      subtitle={category ? "Choose a product. You never see farmers or lot codes." : `Signed in as ${seat}. Pay in full before collection.`}
+      title="Home"
+      heading={false}
       footer={<BuyerNav navigation={navigation} current="Market" />}
     >
-      {category ? (
-        <Button label="All categories" tone="secondary" onPress={() => setCategory("")} />
-      ) : (
+      <View style={styles.topBar}>
+        {category ? (
+          <Pressable onPress={() => setCategory("")}><Text style={styles.back}>← {CATEGORIES.find((item) => item.id === category)?.label} · {products.length}</Text></Pressable>
+        ) : (
+          <Text style={styles.brand}>CryoChain</Text>
+        )}
+        <Text style={styles.org}>{profile?.organization ?? seat}</Text>
+        <Pressable onPress={() => void signOut()}><Text style={styles.signOut}>Sign out</Text></Pressable>
+      </View>
+      {!category ? (
+        <View style={styles.credit}>
+          <Text style={styles.creditLabel}>Credit balance</Text>
+          <Text style={styles.creditValue}>GHS 0.00</Text>
+        </View>
+      ) : null}
+      {!category ? (
         <View style={styles.grid}>
           {CATEGORIES.map((item) => (
-            <Pressable key={item.id} style={styles.tile} onPress={() => setCategory(item.id)}>
+            <Pressable key={item.id} style={[styles.tile, item.id === "fruit" && styles.tileWide]} onPress={() => setCategory(item.id)}>
               <Text style={styles.tileLabel}>{item.label}</Text>
             </Pressable>
           ))}
         </View>
-      )}
+      ) : null}
       {category
         ? products.map((produce) => (
             <Pressable key={produce.id} onPress={() => navigation.navigate("LotDetail", { produceId: produce.id })}>
               <Card>
-                <View style={styles.row}>
-                  <Text style={styles.title}>{produce.name}</Text>
-                  <Text style={styles.price}>{formatGhs(produce.pricePerKg ?? 0)}<Text style={styles.unit}> /kg</Text></Text>
+                <View style={styles.productRow}>
+                  <View style={styles.thumb}><Text style={styles.thumbText}>{produce.name}</Text></View>
+                  <View style={styles.productCopy}>
+                    <Text style={styles.title}>{produce.name}</Text>
+                    <Text style={styles.meta}>{gradesFor(produce.id) || "Grade on the product page"} · {seat}</Text>
+                    <Text style={styles.price}>{formatGhs(produce.pricePerKg ?? 0)}<Text style={styles.unit}> / kg</Text></Text>
+                  </View>
                 </View>
-                <Text style={styles.meta}>Minimum order in kilograms. Lead time is set on the product page.</Text>
               </Card>
             </Pressable>
           ))
@@ -123,13 +140,16 @@ export function MarketScreen({ navigation }: MarketProps) {
       {!category
         ? previous.slice(0, 3).map((item) => (
             <Card key={item.id}>
-              <Text style={styles.title}>{produceName(db, item.produceId)} · {item.quantityKg} kg</Text>
-              <Text style={styles.meta}>{item.deliveryDate}</Text>
-              <Button label="Reorder" tone="secondary" onPress={() => void run((state, ports, actor) => reorder(state, ports, actor.id, item.id))} />
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.title}>{produceName(db, item.produceId)} · {item.quantityKg} kg</Text>
+                  <Text style={styles.meta}>Delivered {item.deliveryDate}</Text>
+                </View>
+                <Pressable onPress={() => void run((state, ports, actor) => reorder(state, ports, actor.id, item.id))}><Text style={styles.reorder}>Reorder</Text></Pressable>
+              </View>
             </Card>
           ))
         : null}
-      {!category ? <Button label="Sign out" tone="secondary" onPress={() => void signOut()} /> : null}
     </Screen>
   );
 }
@@ -352,6 +372,20 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   tile: { flexGrow: 1, flexBasis: "46%", minHeight: 104, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 8, justifyContent: "flex-end", padding: 14 },
+  tileWide: { flexBasis: "100%" },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  brand: { fontSize: 16, fontWeight: "700", color: colors.primary },
+  org: { flex: 1, marginLeft: 12, fontSize: 12, color: colors.muted, textAlign: "right" },
+  back: { fontSize: 14, fontWeight: "600", color: colors.ink },
+  signOut: { fontSize: 14, fontWeight: "600", color: colors.primary, marginLeft: 12 },
+  credit: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: colors.greenSoft, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16 },
+  creditLabel: { color: colors.green, fontWeight: "600", fontSize: 14 },
+  creditValue: { color: colors.green, fontWeight: "600", fontSize: 16 },
+  productRow: { flexDirection: "row", gap: 12, alignItems: "center" },
+  thumb: { width: 72, height: 72, borderRadius: 6, backgroundColor: colors.surfaceMuted, alignItems: "center", justifyContent: "center" },
+  thumbText: { fontSize: 10, color: colors.slate },
+  productCopy: { flex: 1, gap: 2 },
+  reorder: { color: colors.primary, fontWeight: "600", fontSize: 14 },
   tileLabel: { fontSize: 16, fontWeight: "600", color: colors.ink },
   section: { marginTop: 16, marginBottom: 8, fontSize: 12, fontWeight: "600", color: colors.muted },
   stepper: { flexDirection: "row", gap: 8, marginBottom: 12 },

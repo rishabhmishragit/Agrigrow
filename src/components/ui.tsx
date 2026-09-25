@@ -18,18 +18,20 @@ export function Screen({
   subtitle,
   children,
   footer,
+  heading = true,
 }: {
   title: string;
   subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
+  heading?: boolean;
 }) {
   return (
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.page}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          {heading ? <Text style={styles.title}>{title}</Text> : null}
+          {heading && subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           {children}
         </View>
       </ScrollView>
@@ -177,6 +179,17 @@ export function Empty({ text }: { text: string }) {
   );
 }
 
+export function SyncBar({ label, detail, tone }: { label: string; detail: string; tone: "offline" | "pending" | "syncing" | "synced" }) {
+  const dot = tone === "offline" ? "#BAC2CC" : tone === "pending" ? "#F2B540" : tone === "syncing" ? "#7CB9E8" : "#5BB35F";
+  return (
+    <View style={styles.syncBar}>
+      <View style={[styles.syncDot, { backgroundColor: dot }]} />
+      <Text style={styles.syncLabel}>{label}</Text>
+      <Text style={styles.syncDetail}>{detail}</Text>
+    </View>
+  );
+}
+
 export function Banner({ text, tone = "info" }: { text: string; tone?: "info" | "danger" | "offline" }) {
   return (
     <View style={[styles.banner, tone === "danger" && styles.bannerDanger, tone === "offline" && styles.bannerOffline]}>
@@ -302,6 +315,10 @@ const styles = StyleSheet.create({
   footer: {
     backgroundColor: colors.surface,
   },
+  syncBar: { height: 40, backgroundColor: colors.ink, flexDirection: "row", alignItems: "center", paddingHorizontal: 16, gap: 10 },
+  syncDot: { width: 10, height: 10, borderRadius: 5 },
+  syncLabel: { color: colors.white, fontSize: 14, fontWeight: "600" },
+  syncDetail: { marginLeft: "auto", color: "#BAC2CC", fontSize: 14 },
   banner: {
     backgroundColor: colors.coldSoft,
     paddingVertical: 10,

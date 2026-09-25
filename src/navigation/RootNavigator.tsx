@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useCryo } from "../state/CryoProvider";
-import { Banner } from "../components/ui";
+import { Banner, SyncBar } from "../components/ui";
 import { LoginScreen } from "../features/auth/LoginScreen";
 import {
   FarmerHome,
@@ -60,12 +60,11 @@ export function RootNavigator() {
   }
   return (
     <View style={{ flex: 1 }}>
-      {cryo.offline ? (
-        <Banner
-          tone="offline"
-          text="You are offline. Your changes have been saved and will sync automatically when connectivity returns."
-        />
-      ) : null}
+      <SyncBar
+        label={cryo.offline ? "Offline" : "Synced"}
+        detail={cryo.offline ? "Work continues" : "Online"}
+        tone={cryo.offline ? "offline" : "synced"}
+      />
       {cryo.error ? <Banner tone="danger" text={cryo.error} /> : null}
       {cryo.notice ? <Banner text={cryo.notice} /> : null}
       {!cryo.user ? <LoginScreen /> : null}
@@ -82,12 +81,12 @@ export function RootNavigator() {
       ) : null}
       {cryo.user?.role === "offtaker" ? (
         <OfftakerStack.Navigator screenOptions={screenOptions}>
-          <OfftakerStack.Screen name="Market" component={MarketScreen} options={{ title: "Order" }} />
+          <OfftakerStack.Screen name="Market" component={MarketScreen} options={{ headerShown: false }} />
           <OfftakerStack.Screen name="LotDetail" component={LotDetailScreen} options={{ title: "Product" }} />
-          <OfftakerStack.Screen name="Orders" component={OrdersScreen} options={{ title: "Orders" }} />
+          <OfftakerStack.Screen name="Orders" component={OrdersScreen} options={{ headerShown: false }} />
           <OfftakerStack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ title: "Order" }} />
-          <OfftakerStack.Screen name="Payments" component={PaymentsScreen} options={{ title: "Payments" }} />
-          <OfftakerStack.Screen name="Team" component={TeamScreen} options={{ title: "Users" }} />
+          <OfftakerStack.Screen name="Payments" component={PaymentsScreen} options={{ headerShown: false }} />
+          <OfftakerStack.Screen name="Team" component={TeamScreen} options={{ headerShown: false }} />
           <OfftakerStack.Screen name="Profile" component={OfftakerProfile} options={{ title: "Account" }} />
         </OfftakerStack.Navigator>
       ) : null}
