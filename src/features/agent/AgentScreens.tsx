@@ -4,6 +4,8 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCryo } from "../../state/CryoProvider";
 import { Button, Card, Choice, Empty, Field, KeyValue, Screen, StatusBadge } from "../../components/ui";
 import { farmerName, produceName } from "../../domain/selectors";
+import { declineSale, DECLINE_REASONS, lockColdBox } from "../../domain/clientFlows";
+import { formatGhs } from "../../domain/money";
 import { flushSync, recordInspection } from "../../domain/fieldOps";
 import { registerFarmer } from "../../domain/trade";
 import { captureEvidence, readPosition } from "../../services/device";
@@ -45,7 +47,7 @@ export function AgentJobs({ navigation }: JobsProps) {
               return (
                 <Pressable key={item.id} onPress={() => navigation.navigate("Inspection", { consignmentId: item.id })}>
                   <View style={styles.row}>
-                    <Text style={styles.name}>{farmerName(db, item.farmerId)} · {item.expectedQuantity} {item.unit}</Text>
+                    <Text style={styles.name}>{farmerName(db, item.farmerId)} · {item.expectedQuantity} {item.unit} · {formatGhs(item.agreedPricePerUnit)} / kg</Text>
                     <StatusBadge status={inspection ? (inspection.syncStatus === "SYNCED" ? "SYNCED" : "PENDING") : "PENDING"} />
                   </View>
                 </Pressable>
@@ -63,46 +65,52 @@ export function InspectionScreen({ route }: InspectionProps) {
   const consignment = db.consignments.find((item) => item.id === route.params.consignmentId);
   const scale = db.gradeScales.find((item) => item.produceId === consignment?.produceId);
   const existing = db.inspections.find((item) => item.consignmentId === consignment?.id);
-  const [actual, setActual] = useState(String(existing?.actualQuantity ?? consignment?.expectedQuantity ?? ""));
-  const [rejected, setRejected] = useState(String(existing?.rejectedQuantity ?? "0"));
+  const [actual, setActual] = useState(String(existing?.actualQuantity ?? ""));
   const [grade, setGrade] = useState(existing?.gradeCode ?? scale?.grades[0]?.code ?? "");
-  const [notes, setNotes] = useState(existing?.notes ?? "");
-  const [photos, setPhotos] = useState<string[]>(existing?.photoUris ?? []);
-  if (!consignment) return <Screen title="Inspection"><Empty text="Consignment was not found." /></Screen>;
+  const [timePicked, setTimePicked] = useState(existing?.timePicked ?? "");
+  const [identity, setIdentity] = useState(existing?.identityPhotoUri);
+  const [crate, setCrate] = useState(existing?.cratePhotoUri);
+  const [scalePhoto, setScalePhoto] = useState(existing?.scalePhotoUri);
+  const locked = existing?.locked === true;
+  if (!consignment) return <Screen title="Consignment"><Empty text="Consignment was not found." /></Screen>;
+  const photosReady = Boolean(identity && crate && scalePhoto && grade && actual);
   return (
-    <Screen title={farmerName(db, consignment.farmerId)} subtitle={`${produceName(db, consignment.produceId)} · expected ${consignment.expectedQuantity} ${consignment.unit}`}>
+    <Screen title={farmerName(db, consignment.farmerId)} subtitle={`${produceName(db, consignment.produceId)} · ${formatGhs(consignment.agreedPricePerUnit)} / kg · expected ${consignment.expectedQuantity} kg`}>
       <Card>
-        <Text style={styles.meta}>{offline ? "PENDING SYNC — this phone will keep the reading." : existing?.syncStatus === "SYNCED" ? "SYNCED" : "Ready to send"}</Text>
+        <KeyValue label="Price per kg" value={formatGhs(consignment.agreedPricePerUnit)} />
+        <Text style={styles.meta}>{offline ? "PENDING SYNC — this phone will keep the reading." : existing?.coldBoxAt ? `Into cold box ${existing.coldBoxAt}` : "Capture time is stamped by the app."}</Text>
         {existing ? <StatusBadge status={existing.syncStatus} /> : null}
       </Card>
-      <Field label="Actual quantity" value={actual} onChangeText={setActual} keyboardType="numeric" />
-      <Field label="Rejected quantity" value={rejected} onChangeText={setRejected} keyboardType="numeric" />
-      <Text style={styles.label}>Grade</Text>
+      <Button label={identity ? "Identity photo added" : "Farmer identity photo"} tone="secondary" disabled={locked} onPress={() => void captureEvidence().then((uri) => { if (uri) setIdentity(uri); })} />
+      <Field label="Scale weight (kg, 1 decimal)" value={actual} onChangeText={(value) => setActual(value.replace(/[^\d.]/g, ""))} keyboardType="numeric" />
+      <Text style={styles.label}>Grade from the product scale</Text>
       <View style={styles.wrap}>
         {scale?.grades.map((item) => (
-          <Choice key={item.code} label={`${item.code} ${item.label}`} selected={item.code === grade} onPress={() => setGrade(item.code)} />
+          <Choice key={item.code} label={`${item.code} ${item.label}`} selected={item.code === grade} onPress={() => { if (!locked) setGrade(item.code); }} />
         ))}
       </View>
-      <Field label="Notes" value={notes} onChangeText={setNotes} multiline />
+      <Field label="Time picked, as the farmer says" value={timePicked} onChangeText={setTimePicked} placeholder="HH:MM" />
+      <Button label={crate ? "Crate photo added" : "Crate photo"} tone="secondary" disabled={locked} onPress={() => void captureEvidence().then((uri) => { if (uri) setCrate(uri); })} />
+      <Button label={scalePhoto ? "Scale display photo added" : "Scale display photo"} tone="secondary" disabled={locked} onPress={() => void captureEvidence().then((uri) => { if (uri) setScalePhoto(uri); })} />
       <Button
-        label={photos.length ? "Photo added" : "Add photo"}
-        tone="secondary"
-        onPress={() => void captureEvidence().then((uri) => { if (uri) setPhotos((current) => [...current, uri]); })}
-      />
-      <Button
-        label={busy ? "Saving" : "Confirm grade and weight"}
-        disabled={busy}
+        label={busy ? "Saving" : "Save capture"}
+        disabled={busy || locked || !photosReady}
         onPress={() =>
           void (async () => {
             const position = await readPosition();
+            const weight = Math.round(Number(actual) * 10) / 10;
             await run((state, ports, user) =>
               recordInspection(state, ports, user.id, {
                 consignmentId: consignment.id,
-                actualQuantity: Number(actual),
-                rejectedQuantity: Number(rejected),
+                actualQuantity: weight,
+                rejectedQuantity: 0,
                 gradeCode: grade,
-                notes,
-                photoUris: photos,
+                notes: `Time picked ${timePicked}`,
+                photoUris: [identity, crate, scalePhoto].filter((item): item is string => Boolean(item)),
+                identityPhotoUri: identity,
+                cratePhotoUri: crate,
+                scalePhotoUri: scalePhoto,
+                timePicked,
                 latitude: position?.latitude,
                 longitude: position?.longitude,
                 idempotencyKey: `inspection:${consignment.id}:${user.id}`,
@@ -112,6 +120,17 @@ export function InspectionScreen({ route }: InspectionProps) {
           })()
         }
       />
+      <Button
+        label="Into cold box"
+        disabled={busy || locked || !existing}
+        onPress={() => existing ? void run((state, ports, user) => lockColdBox(state, ports, user.id, existing.id)) : undefined}
+      />
+      <Text style={styles.label}>Decline sale</Text>
+      <View style={styles.wrap}>
+        {DECLINE_REASONS.map((reason) => (
+          <Choice key={reason} label={reason} selected={false} onPress={() => void run((state, ports, user) => declineSale(state, ports, user.id, { consignmentId: consignment.id, reason }))} />
+        ))}
+      </View>
     </Screen>
   );
 }
@@ -140,19 +159,37 @@ export function RegisterFarmerScreen() {
   const [phone, setPhone] = useState("+23324400");
   const [village, setVillage] = useState("");
   const [produceId, setProduceId] = useState(db.produce[0]?.id ?? "");
+  const [momo, setMomo] = useState("");
+  const [network, setNetwork] = useState<"MTN" | "Telecel" | "AirtelTigo">("MTN");
+  const [tier, setTier] = useState<"bronze" | "silver" | "gold">("bronze");
+  const [consent, setConsent] = useState(false);
   return (
-    <Screen title="Register farmer" subtitle="A field agent can register a farmer who does not have the app.">
+    <Screen title="Register farmer" subtitle="MoMo wallet, network, tier, then consent.">
       <Field label="Name" value={name} onChangeText={setName} />
       <Field label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
       <Field label="Village" value={village} onChangeText={setVillage} />
+      <Field label="MoMo number" value={momo} onChangeText={setMomo} keyboardType="phone-pad" />
+      <Text style={styles.label}>Network</Text>
+      <View style={styles.wrap}>
+        {(["MTN", "Telecel", "AirtelTigo"] as const).map((item) => (
+          <Choice key={item} label={item} selected={item === network} onPress={() => setNetwork(item)} />
+        ))}
+      </View>
+      <Text style={styles.label}>Wallet tier</Text>
+      <View style={styles.wrap}>
+        {(["bronze", "silver", "gold"] as const).map((item) => (
+          <Choice key={item} label={item} selected={item === tier} onPress={() => setTier(item)} />
+        ))}
+      </View>
       <View style={styles.wrap}>
         {db.produce.map((item) => (
           <Choice key={item.id} label={item.name} selected={item.id === produceId} onPress={() => setProduceId(item.id)} />
         ))}
       </View>
+      <Button label={consent ? "Consent recorded" : "Farmer consents to payouts"} tone="secondary" onPress={() => setConsent(true)} />
       <Button
         label={busy ? "Saving" : "Register"}
-        disabled={busy}
+        disabled={busy || !consent || !momo}
         onPress={() =>
           void run((state, ports, user) =>
             registerFarmer(state, ports, user.id, {
@@ -162,6 +199,10 @@ export function RegisterFarmerScreen() {
               community: village,
               location: village,
               produceIds: [produceId],
+              momoNumber: momo,
+              momoNetwork: network,
+              walletTier: tier,
+              consentAt: new Date().toISOString(),
             }),
           )
         }

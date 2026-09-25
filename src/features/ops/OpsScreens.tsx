@@ -13,15 +13,16 @@ import {
   produceName,
   userName,
 } from "../../domain/selectors";
+import { allocateBuyerOrder, approvePayoutRun, createPayoutRun, hoursLeft, recutConsignment, saveOpsConfig } from "../../domain/clientFlows";
 import { releaseEscrow } from "../../domain/settlement";
 import { createLot, scheduleCollection, updateException } from "../../domain/trade";
 import { colors } from "../../theme";
 
 const SECTIONS = [
   "Dashboard",
-  "Listings",
-  "Lots",
-  "Commitments",
+  "Orders",
+  "Allocation",
+  "Runs",
   "Payments",
   "Collections",
   "Manifests",
@@ -37,7 +38,7 @@ type Section = (typeof SECTIONS)[number];
 
 const NAV = [
   { label: "Overview", items: ["Dashboard"] as Section[] },
-  { label: "Trade", items: ["Listings", "Lots", "Commitments", "Payments", "Settlements"] as Section[] },
+  { label: "Trade", items: ["Orders", "Allocation", "Runs", "Payments", "Settlements"] as Section[] },
   { label: "Custody", items: ["Collections", "Manifests", "Deliveries"] as Section[] },
   { label: "Control", items: ["Exceptions", "People", "Audit", "Settings"] as Section[] },
 ];
@@ -74,9 +75,9 @@ export function OpsConsole() {
       )}
       <View style={styles.main}>
         {section === "Dashboard" ? <Dashboard /> : null}
-        {section === "Listings" ? <Listings /> : null}
-        {section === "Lots" ? <Lots /> : null}
-        {section === "Commitments" ? <Commitments /> : null}
+        {section === "Orders" ? <OrderBook /> : null}
+        {section === "Allocation" ? <Allocation /> : null}
+        {section === "Runs" ? <PayoutRuns /> : null}
         {section === "Payments" ? <EscrowPanel /> : null}
         {section === "Collections" ? <Collections /> : null}
         {section === "Manifests" ? <Manifests /> : null}
@@ -88,6 +89,92 @@ export function OpsConsole() {
         {section === "Settings" ? <Settings /> : null}
       </View>
     </View>
+  );
+}
+
+function OrderBook() {
+  const { db } = useCryo();
+  const paid = db.buyerOrders.filter((item) => item.paymentStatus === "PAID");
+  return (
+    <Screen title="Orders" subtitle="Paid buyer orders. Farmers and consignments stay on Allocation.">
+      {paid.length === 0 ? <Empty text="No paid orders yet." /> : null}
+      {paid.map((item) => (
+        <Card key={item.id}>
+          <Text style={styles.rowTitle}>{produceName(db, item.produceId)} · {item.quantityKg} kg</Text>
+          <Text style={styles.meta}>{item.deliveryDate} · {formatGhs(item.totalGhs)}</Text>
+          <StatusBadge status={item.orderStatus} />
+        </Card>
+      ))}
+    </Screen>
+  );
+}
+
+function Allocation() {
+  const { db, run, busy } = useCryo();
+  const [orderId, setOrderId] = useState(db.buyerOrders.find((item) => item.paymentStatus === "PAID")?.id ?? "");
+  const [farmerId, setFarmerId] = useState(db.farmerProfiles[0]?.id ?? "");
+  const [kg, setKg] = useState("100");
+  const [price, setPrice] = useState("4.50");
+  const order = db.buyerOrders.find((item) => item.id === orderId);
+  const consignments = order?.lotId ? lotConsignments(db, order.lotId) : [];
+  return (
+    <Screen title="Allocation" subtitle="Split a paid order across farmers. Price is set per consignment.">
+      <Text style={styles.meta}>Order</Text>
+      <View style={styles.wrap}>
+        {db.buyerOrders.filter((item) => item.paymentStatus === "PAID").map((item) => (
+          <Choice key={item.id} label={`${produceName(db, item.produceId)} ${item.quantityKg} kg`} selected={item.id === orderId} onPress={() => setOrderId(item.id)} />
+        ))}
+      </View>
+      <Text style={styles.meta}>Farmer</Text>
+      <View style={styles.wrap}>
+        {db.farmerProfiles.map((item) => (
+          <Choice key={item.id} label={farmerName(db, item.id)} selected={item.id === farmerId} onPress={() => setFarmerId(item.id)} />
+        ))}
+      </View>
+      <Field label="Kilograms for this consignment" value={kg} onChangeText={setKg} keyboardType="numeric" />
+      <Field label="Price per kg" value={price} onChangeText={setPrice} keyboardType="numeric" />
+      <Button
+        label={busy ? "Saving" : "Add consignment"}
+        disabled={busy || !order}
+        onPress={() => order ? void run((state, ports, user) => allocateBuyerOrder(state, ports, user.id, { orderId: order.id, splits: [...(order.lotId ? lotConsignments(state, order.lotId).map((item) => ({ farmerId: item.farmerId, kg: item.expectedQuantity, pricePerKg: item.agreedPricePerUnit })) : []), { farmerId, kg: Number(kg), pricePerKg: Number(price) }] })) : undefined}
+      />
+      {consignments.map((item) => (
+        <Card key={item.id}>
+          <Text style={styles.rowTitle}>{farmerName(db, item.farmerId)} · {item.expectedQuantity} kg</Text>
+          <Text style={styles.meta}>{formatGhs(item.agreedPricePerUnit)} / kg · settlement {formatGhs(item.expectedQuantity * item.agreedPricePerUnit)}</Text>
+          <Button label="Re-cut short" tone="secondary" onPress={() => void run((state, ports, user) => recutConsignment(state, ports, user.id, { consignmentId: item.id, kg: Math.max(1, item.expectedQuantity - 10) }))} />
+        </Card>
+      ))}
+    </Screen>
+  );
+}
+
+function PayoutRuns() {
+  const { db, run, busy, user } = useCryo();
+  const payable = db.settlements.filter((item) => item.status !== "PAID");
+  const [selected, setSelected] = useState<string[]>([]);
+  return (
+    <Screen title="Runs" subtitle="Payable consignments. A run needs another approver, and two approvers above the threshold.">
+      {payable.map((item) => {
+        const due = new Date(new Date(item.calculatedAt).getTime() + 24 * 60 * 60 * 1000).toISOString();
+        return (
+          <Pressable key={item.id} onPress={() => setSelected((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])}>
+            <Card style={selected.includes(item.id) ? styles.selected : undefined}>
+              <Text style={styles.rowTitle}>{farmerName(db, item.farmerId)} · {formatGhs(item.netSettlement)}</Text>
+              <Text style={styles.meta}>{hoursLeft(due, new Date().toISOString())} hours left in the 24h window</Text>
+            </Card>
+          </Pressable>
+        );
+      })}
+      <Button label={busy ? "Creating" : "Create payout run"} disabled={busy || selected.length === 0} onPress={() => void run((state, ports, actor) => createPayoutRun(state, ports, actor.id, selected))} />
+      {db.payoutRuns.map((item) => (
+        <Card key={item.id}>
+          <Text style={styles.rowTitle}>{formatGhs(item.totalGhs)} · {item.status}</Text>
+          <Text style={styles.meta}>Raised by {userName(db, item.raisedBy)} · due {item.dueAt}</Text>
+          <Button label="Approve" tone="secondary" disabled={item.raisedBy === user?.id} onPress={() => void run((state, ports, actor) => approvePayoutRun(state, ports, actor.id, item.id))} />
+        </Card>
+      ))}
+    </Screen>
   );
 }
 
@@ -375,8 +462,8 @@ function Settlements() {
       {db.settlements.map((item) => (
         <Card key={item.id}>
           <Text style={styles.rowTitle}>{farmerName(db, item.farmerId)}</Text>
-          <MoneyRow label="Gross" value={item.grossValue} />
-          <MoneyRow label="Net" value={item.netSettlement} strong />
+          <Text style={styles.meta}>{(db.consignments.find((row) => row.id === item.consignmentId)?.acceptedWeight ?? db.consignments.find((row) => row.id === item.consignmentId)?.expectedQuantity ?? 0)} kg × {formatGhs(db.consignments.find((row) => row.id === item.consignmentId)?.agreedPricePerUnit ?? 0)}</Text>
+          <MoneyRow label="Settlement" value={item.netSettlement} strong />
           <KeyValue label="Reference" value={item.paymentReference ?? "—"} />
           <StatusBadge status={item.status} />
         </Card>
@@ -454,9 +541,29 @@ function Audit() {
 }
 
 function Settings() {
-  const { signOut, resetDemo, forceOffline, setForceOffline } = useCryo();
+  const { db, run, busy, signOut, resetDemo, forceOffline, setForceOffline } = useCryo();
+  const [threshold, setThreshold] = useState(String(db.opsConfig.payoutApprovalThresholdGhs));
+  const [minC, setMinC] = useState(String(db.opsConfig.temperatureMinC));
+  const [maxC, setMaxC] = useState(String(db.opsConfig.temperatureMaxC));
+  const [approvers, setApprovers] = useState(db.opsConfig.payoutApproverIds);
+  const opsUsers = db.users.filter((item) => item.role === "ops");
   return (
-    <Screen title="Settings" subtitle="Development tools. Demo accounts are not for production.">
+    <Screen title="Settings" subtitle="Payout threshold, approvers, temperature checkpoints.">
+      <Field label="Two-approver threshold (GHS)" value={threshold} onChangeText={setThreshold} keyboardType="numeric" />
+      <Field label="Minimum temperature °C" value={minC} onChangeText={setMinC} keyboardType="numeric" />
+      <Field label="Maximum temperature °C" value={maxC} onChangeText={setMaxC} keyboardType="numeric" />
+      <Text style={styles.meta}>Approvers</Text>
+      <View style={styles.wrap}>
+        {opsUsers.map((item) => (
+          <Choice key={item.id} label={item.fullName} selected={approvers.includes(item.id)} onPress={() => setApprovers((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])} />
+        ))}
+      </View>
+      <Text style={styles.meta}>Checkpoints: {db.opsConfig.checkpoints.join(", ")}</Text>
+      <Button
+        label={busy ? "Saving" : "Save configuration"}
+        disabled={busy}
+        onPress={() => void run((state, ports, user) => saveOpsConfig(state, ports, user.id, { ...state.opsConfig, payoutApprovalThresholdGhs: Number(threshold), temperatureMinC: Number(minC), temperatureMaxC: Number(maxC), payoutApproverIds: approvers }))}
+      />
       <Button label={forceOffline ? "Offline forced" : "Force offline"} tone="secondary" onPress={() => setForceOffline(!forceOffline)} />
       <Button label="Sign out" tone="secondary" onPress={() => void signOut()} />
       <Button label="Reset demo data" tone="danger" onPress={() => void resetDemo()} />
@@ -467,14 +574,14 @@ function Settings() {
 const styles = StyleSheet.create({
   frame: { flex: 1, backgroundColor: colors.bg },
   frameWide: { flexDirection: "row" },
-  side: { width: 248, backgroundColor: colors.sidebar, paddingHorizontal: 16, paddingTop: 28, paddingBottom: 24 },
-  brand: { color: colors.white, fontSize: 20, fontWeight: "700", letterSpacing: -0.3 },
-  sideNote: { color: colors.sidebarMuted, marginTop: 4, marginBottom: 18, fontSize: 13 },
-  group: { color: colors.sidebarMuted, fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginTop: 16, marginBottom: 6, paddingHorizontal: 10 },
-  sideItem: { paddingVertical: 9, paddingHorizontal: 10, borderRadius: 10, marginBottom: 2 },
-  sideOn: { backgroundColor: "rgba(255,255,255,0.08)" },
-  sideText: { color: colors.sidebarText, fontSize: 14 },
-  sideTextOn: { color: colors.white, fontWeight: "700" },
+  side: { width: 220, backgroundColor: colors.surface, paddingHorizontal: 16, paddingTop: 24, paddingBottom: 24, borderRightWidth: 1, borderRightColor: colors.line },
+  brand: { color: colors.ink, fontSize: 18, fontWeight: "600" },
+  sideNote: { color: colors.muted, marginTop: 4, marginBottom: 18, fontSize: 12 },
+  group: { color: colors.muted, fontSize: 11, fontWeight: "600", letterSpacing: 0.6, textTransform: "uppercase", marginTop: 16, marginBottom: 6, paddingHorizontal: 12 },
+  sideItem: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 6, marginBottom: 2 },
+  sideOn: { backgroundColor: colors.primarySoft },
+  sideText: { color: colors.ink, fontSize: 14 },
+  sideTextOn: { color: colors.primaryDark, fontWeight: "600" },
   chips: { maxHeight: 58, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.line },
   chipRow: { paddingHorizontal: 12, paddingVertical: 10, alignItems: "center" },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, marginRight: 8, backgroundColor: colors.bg },

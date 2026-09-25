@@ -29,12 +29,16 @@ const generalGrades: GradeOption[] = [
 export function createSeed(): AppDatabase {
   const db = emptyDatabase();
   db.produce.push(
-    { id: "prod_tomato", name: "Tomato", defaultUnit: "kg", temperatureMinC: 8, temperatureMaxC: 12 },
-    { id: "prod_pepper", name: "Pepper", defaultUnit: "kg", temperatureMinC: 7, temperatureMaxC: 10 },
-    { id: "prod_okra", name: "Okra", defaultUnit: "kg" },
-    { id: "prod_maize", name: "Maize", defaultUnit: "kg" },
-    { id: "prod_yam", name: "Yam", defaultUnit: "kg" },
-    { id: "prod_mango", name: "Mango", defaultUnit: "kg", temperatureMinC: 10, temperatureMaxC: 13 },
+    { id: "prod_tomato", name: "Tomato", defaultUnit: "kg", category: "vegetables", pricePerKg: 4.5, temperatureMinC: 8, temperatureMaxC: 12 },
+    { id: "prod_pepper", name: "Pepper", defaultUnit: "kg", category: "vegetables", pricePerKg: 8, temperatureMinC: 7, temperatureMaxC: 10 },
+    { id: "prod_okra", name: "Okra", defaultUnit: "kg", category: "vegetables", pricePerKg: 5 },
+    { id: "prod_maize", name: "Maize", defaultUnit: "kg", category: "vegetables", pricePerKg: 3.2 },
+    { id: "prod_yam", name: "Yam", defaultUnit: "kg", category: "vegetables", pricePerKg: 4 },
+    { id: "prod_mango", name: "Mango", defaultUnit: "kg", category: "fruit", pricePerKg: 6, temperatureMinC: 10, temperatureMaxC: 13 },
+    { id: "prod_pineapple", name: "Pineapple", defaultUnit: "kg", category: "fruit", pricePerKg: 5.5 },
+    { id: "prod_goat", name: "Goat meat", defaultUnit: "kg", category: "meat", pricePerKg: 45, temperatureMinC: 0, temperatureMaxC: 4 },
+    { id: "prod_tilapia", name: "Tilapia", defaultUnit: "kg", category: "fish", pricePerKg: 28, temperatureMinC: 0, temperatureMaxC: 2 },
+    { id: "prod_milk", name: "Fresh milk", defaultUnit: "kg", category: "dairy", pricePerKg: 8, temperatureMinC: 2, temperatureMaxC: 4 },
   );
   db.gradeScales.push(
     { id: "scale_tomato", produceId: "prod_tomato", grades: tomatoGrades },
@@ -43,6 +47,10 @@ export function createSeed(): AppDatabase {
     { id: "scale_maize", produceId: "prod_maize", grades: generalGrades },
     { id: "scale_yam", produceId: "prod_yam", grades: generalGrades },
     { id: "scale_mango", produceId: "prod_mango", grades: generalGrades },
+    { id: "scale_pineapple", produceId: "prod_pineapple", grades: generalGrades },
+    { id: "scale_goat", produceId: "prod_goat", grades: generalGrades },
+    { id: "scale_tilapia", produceId: "prod_tilapia", grades: generalGrades },
+    { id: "scale_milk", produceId: "prod_milk", grades: generalGrades },
   );
 
   const people: Array<[string, string, string, string, string, string]> = [
@@ -65,6 +73,7 @@ export function createSeed(): AppDatabase {
     ["u_grace", "driver", "Grace Mensima", "+233244220002", "grace@drivers.cryochain.local", "Accra"],
     ["u_daniel", "driver", "Daniel Owusu", "+233244220003", "daniel@drivers.cryochain.local", "Tamale"],
     ["u_ops", "ops", "Ama Darkwah", "+233302330001", "ops@test.com", "Accra"],
+    ["u_ops2", "ops", "Kweku Mensah", "+233302330002", "ops2@test.com", "Accra"],
   ];
   for (const [id, role, fullName, phone, email, location] of people) {
     db.users.push({
@@ -106,8 +115,8 @@ export function createSeed(): AppDatabase {
     });
   }
   db.offtakerProfiles.push(
-    { id: "o_accra", userId: "u_accra", organization: "Accra Fresh Markets Ltd", deliveryLocation: "Avenor Cold Store, Accra", latitude: 5.6037, longitude: -0.187 },
-    { id: "o_kumasi", userId: "u_kumasi", organization: "Kumasi Cold Foods", deliveryLocation: "Asafo Cold Room, Kumasi", latitude: 6.6885, longitude: -1.6244 },
+    { id: "o_accra", userId: "u_accra", organization: "Accra Fresh Markets Ltd", deliveryLocation: "Avenor Cold Store, Accra", latitude: 5.6037, longitude: -0.187, buyerSeat: "admin", paymentLimitGhs: 50000 },
+    { id: "o_kumasi", userId: "u_kumasi", organization: "Kumasi Cold Foods", deliveryLocation: "Asafo Cold Room, Kumasi", latitude: 6.6885, longitude: -1.6244, buyerSeat: "approver", paymentLimitGhs: 8000 },
   );
   db.fieldAgentProfiles.push(
     { id: "a_nana", userId: "u_nana", baseLocation: "Techiman", assignedArea: "Techiman–Wenchi" },
@@ -251,7 +260,7 @@ export function createSeed(): AppDatabase {
   });
 
   db.stops.push(
-    { id: "stop_job", kind: "COLLECTION", collectionId: "col_job", manifestId: "mf_today", lotId: "lot_job", location: "Offinso aggregation point", latitude: 6.93, longitude: -1.65, windowLabel: "08:00–11:00", collectionFee: 90, consignmentIds: ["c_ama", "c_esi"], status: "PENDING", sequence: 1 },
+    { id: "stop_job", kind: "COLLECTION", collectionId: "col_job", manifestId: "mf_today", lotId: "lot_job", location: "Offinso farm gate", latitude: 6.93, longitude: -1.65, windowLabel: "08:00–11:00", collectionFee: 90, consignmentIds: ["c_ama", "c_esi"], status: "PENDING", sequence: 1 },
     { id: "stop_transit_del", kind: "DELIVERY", manifestId: "mf_today", lotId: "lot_transit", location: "Avenor Cold Store, Accra", latitude: 5.6037, longitude: -0.187, windowLabel: "14:00–17:00", collectionFee: 0, consignmentIds: ["c_efua_tr", "c_kofi_tr"], status: "IN_TRANSIT", sequence: 2 },
     { id: "stop_tr_col", kind: "COLLECTION", collectionId: "col_transit", manifestId: "mf_today", lotId: "lot_transit", location: "Mampong", latitude: 7.06, longitude: -1.4, windowLabel: "06:00–09:00", collectionFee: 80, consignmentIds: ["c_efua_tr", "c_kofi_tr"], status: "COLLECTED", sequence: 0, completedAt: "2026-09-22T09:00:00.000Z" },
     { id: "stop_acc", kind: "COLLECTION", collectionId: "col_accept", lotId: "lot_accept", location: "Wenchi", latitude: 7.74, longitude: -2.1, windowLabel: "07:00–10:00", collectionFee: 200, consignmentIds: ["c_abena_acc", "c_yaw_acc"], status: "COLLECTED", sequence: 1, completedAt: "2026-09-21T10:00:00.000Z" },
@@ -350,12 +359,36 @@ export function createSeed(): AppDatabase {
   });
 
   db.exceptions.push(
-    { id: "ex1", type: "Payment not yet confirmed", severity: "MEDIUM", entityType: "Escrow", entityId: "esc_pending", description: "LC-2402 payment has not been confirmed yet.", createdBy: "u_ops", status: "OPEN", createdAt: NOW },
-    { id: "ex2", type: "Driver delay", severity: "LOW", entityType: "Manifest", entityId: "mf_today", description: "Truck GS 2140-26 reported a late departure from Kumasi.", createdBy: "u_ops", assignedTo: "u_samuel", status: "ASSIGNED", createdAt: NOW },
-    { id: "ex3", type: "Quality failure", severity: "HIGH", entityType: "Consignment", entityId: "c_kofi_tr", description: "10 kg of Kofi Adu's tomatoes were rejected at grading.", createdBy: "u_linda", status: "IN_PROGRESS", createdAt: NOW },
-    { id: "ex4", type: "Farmer unavailable", severity: "MEDIUM", entityType: "FarmerProfile", entityId: "f_esi", description: "Esi Quaye asked to move the mango pickup later in the window.", createdBy: "u_nana", status: "RESOLVED", resolution: "Pickup kept inside the same window.", createdAt: NOW, resolvedAt: NOW },
-    { id: "ex5", type: "Sync conflict", severity: "LOW", entityType: "FieldInspection", entityId: "ins_akua", description: "Two versions of this weight exist. Both kept. Waiting for the node manager.", createdBy: "u_ops", status: "CLOSED", resolution: "Both versions were kept for the node manager.", createdAt: NOW, resolvedAt: NOW },
+    { id: "ex1", type: "Payment mismatch", severity: "MEDIUM", entityType: "BuyerOrder", entityId: "bo_mango", description: "Paid amount does not match the order total.", createdBy: "u_ops", status: "OPEN", createdAt: NOW },
+    { id: "ex2", type: "Temp out of range", severity: "HIGH", entityType: "TemperatureRecord", entityId: "temp_seed", description: "14°C at depart last. Range is 0–8°C.", createdBy: "u_samuel", status: "OPEN", createdAt: NOW },
+    { id: "ex3", type: "Consignment short", severity: "HIGH", entityType: "Consignment", entityId: "c_kofi_tr", description: "Kofi Adu short by 10 kg. Both the expected and confirmed weights are kept.", createdBy: "u_linda", status: "IN_PROGRESS", createdAt: NOW },
+    { id: "ex4", type: "Farmer no show", severity: "MEDIUM", entityType: "FarmerProfile", entityId: "f_esi", description: "Esi Quaye was not at the farm gate.", createdBy: "u_nana", status: "RESOLVED", resolution: "Pickup moved inside the same window.", createdAt: NOW, resolvedAt: NOW },
+    { id: "ex5", type: "Sync conflict", severity: "LOW", entityType: "FieldInspection", entityId: "ins_akua", description: "Two versions of this weight exist. Both kept. Waiting for the node manager. Phone 200.0 kg. Server 198.5 kg.", createdBy: "u_ops", status: "OPEN", createdAt: NOW },
+    { id: "ex6", type: "Transfer failed", severity: "HIGH", entityType: "Payment", entityId: "pay_seed", description: "MoMo transfer to the farmer failed.", createdBy: "u_ops", status: "OPEN", createdAt: NOW },
+    { id: "ex7", type: "Wallet limit", severity: "MEDIUM", entityType: "FarmerProfile", entityId: "f_akua", description: "Payout is above the farmer wallet tier.", createdBy: "u_ops", status: "OPEN", createdAt: NOW },
+    { id: "ex8", type: "Delivery rejection", severity: "HIGH", entityType: "Delivery", entityId: "del_accept", description: "Receiver rejected 4 kg. Reason: soft fruit.", createdBy: "u_samuel", status: "OPEN", createdAt: NOW },
   );
+  db.buyerOrders.push({
+    id: "bo_mango",
+    offtakerId: "o_accra",
+    produceId: "prod_mango",
+    quantityKg: 600,
+    deliveryDate: "2026-09-26",
+    pricePerKg: 6,
+    totalGhs: 3600,
+    orderStatus: "PAID",
+    paymentStatus: "PAID",
+    submittedBy: "u_accra",
+    paidBy: "u_accra",
+    createdAt: NOW,
+  });
+  db.opsConfig = {
+    payoutApprovalThresholdGhs: 5000,
+    payoutApproverIds: ["u_ops", "u_ops2"],
+    temperatureMinC: 0,
+    temperatureMaxC: 8,
+    checkpoints: ["load", "farm_stop", "depart_last", "arrival", "handover"],
+  };
 
   db.notifications.push(
     { id: "n1", userId: "u_akua", channel: "in_app", title: "Payment released", body: `GHS ${akuaPay.netSettlement.toFixed(2)} paid for tomatoes on LC-2360.`, read: false, createdAt: "2026-09-18T18:00:00.000Z", entityType: "Settlement", entityId: "set_akua" },

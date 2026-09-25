@@ -21,7 +21,8 @@ import {
   OfftakerProfile,
   OrderDetailScreen,
   OrdersScreen,
-  RequirementsScreen,
+  PaymentsScreen,
+  TeamScreen,
 } from "../features/offtaker/OfftakerScreens";
 import {
   AgentJobs,
@@ -44,7 +45,7 @@ const screenOptions = {
   headerStyle: { backgroundColor: colors.surface },
   headerTintColor: colors.ink,
   headerShadowVisible: false,
-  headerTitleStyle: { fontWeight: "700" as const, fontSize: 17, color: colors.ink },
+  headerTitleStyle: { fontWeight: "600" as const, fontSize: 16, color: colors.ink },
   contentStyle: { backgroundColor: colors.bg },
 };
 
@@ -81,11 +82,12 @@ export function RootNavigator() {
       ) : null}
       {cryo.user?.role === "offtaker" ? (
         <OfftakerStack.Navigator screenOptions={screenOptions}>
-          <OfftakerStack.Screen name="Market" component={MarketScreen} options={{ title: "Lots" }} />
-          <OfftakerStack.Screen name="LotDetail" component={LotDetailScreen} options={{ title: "Lot" }} />
+          <OfftakerStack.Screen name="Market" component={MarketScreen} options={{ title: "Order" }} />
+          <OfftakerStack.Screen name="LotDetail" component={LotDetailScreen} options={{ title: "Product" }} />
           <OfftakerStack.Screen name="Orders" component={OrdersScreen} options={{ title: "Orders" }} />
           <OfftakerStack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ title: "Order" }} />
-          <OfftakerStack.Screen name="Requirements" component={RequirementsScreen} options={{ title: "Requirements" }} />
+          <OfftakerStack.Screen name="Payments" component={PaymentsScreen} options={{ title: "Payments" }} />
+          <OfftakerStack.Screen name="Team" component={TeamScreen} options={{ title: "Users" }} />
           <OfftakerStack.Screen name="Profile" component={OfftakerProfile} options={{ title: "Account" }} />
         </OfftakerStack.Navigator>
       ) : null}

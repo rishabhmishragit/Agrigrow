@@ -247,7 +247,7 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   cardTitle: { fontSize: 17, fontWeight: "700", letterSpacing: -0.2, color: colors.ink, marginBottom: 2 },
   meta: { color: colors.muted, marginBottom: 4, lineHeight: 20, fontSize: 14 },
-  links: { marginTop: 4 },
+  links: { gap: 0 },
   label: { fontSize: 12, fontWeight: "700", letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 8, color: colors.muted },
   wrap: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8 },
   note: { color: colors.muted, marginTop: 10, lineHeight: 20 },

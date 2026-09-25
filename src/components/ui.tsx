@@ -28,7 +28,6 @@ export function Screen({
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.page}>
-          <Text style={styles.kicker}>CryoChain</Text>
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           {children}
@@ -187,26 +186,24 @@ export function Banner({ text, tone = "info" }: { text: string; tone?: "info" | 
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 },
+  safe: { flex: 1, backgroundColor: colors.canvas },
+  scroll: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 },
   page: { width: "100%", maxWidth: 1080, alignSelf: "center" },
   kicker: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
-    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.muted,
     marginBottom: 6,
   },
-  title: { fontSize: 30, fontWeight: "700", letterSpacing: -0.6, color: colors.ink },
-  subtitle: { fontSize: 15, color: colors.muted, marginTop: 6, marginBottom: 18, lineHeight: 22, maxWidth: 640 },
+  title: { fontSize: 20, fontWeight: "600", lineHeight: 25, color: colors.ink },
+  subtitle: { fontSize: 14, color: colors.muted, marginTop: 6, marginBottom: 16, lineHeight: 20, maxWidth: 640 },
   section: { marginTop: 22, marginBottom: 10 },
   sectionTitle: { fontSize: 13, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase", color: colors.muted },
   sectionHint: { color: colors.faint, marginTop: 2, fontSize: 13 },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 8,
+    padding: 14,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: colors.line,
@@ -214,7 +211,7 @@ const styles = StyleSheet.create({
   },
   metric: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.line,
     paddingVertical: 16,
@@ -227,16 +224,17 @@ const styles = StyleSheet.create({
   metricValue: { color: colors.ink, fontSize: 28, fontWeight: "700", letterSpacing: -0.6, marginTop: 8 },
   button: {
     minHeight: 48,
-    borderRadius: 12,
+    borderRadius: 6,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
-    marginTop: 8,
+    marginTop: 4,
+    marginBottom: 12,
   },
   buttonSecondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.lineStrong },
-  buttonDanger: { backgroundColor: colors.dangerSoft, borderWidth: 1, borderColor: "#F0C9C9" },
-  buttonText: { color: colors.white, fontSize: 15, fontWeight: "700" },
+  buttonDanger: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger },
+  buttonText: { color: colors.white, fontSize: 16, fontWeight: "600" },
   buttonTextSecondary: { color: colors.ink },
   buttonTextDanger: { color: colors.danger },
   pressed: { opacity: 0.88 },
@@ -247,9 +245,9 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderWidth: 1,
     borderColor: colors.lineStrong,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    backgroundColor: colors.surfaceMuted,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
     fontSize: 16,
     color: colors.ink,
   },
@@ -259,13 +257,12 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 999,
+    borderRadius: 4,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginTop: 8,
+    paddingVertical: 4,
   },
-  dot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
-  badgeText: { fontSize: 12, fontWeight: "700", letterSpacing: 0.2 },
+  dot: { width: 0, height: 0, marginRight: 0 },
+  badgeText: { fontSize: 12, fontWeight: "600" },
   kv: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -303,9 +300,6 @@ const styles = StyleSheet.create({
   },
   emptyText: { color: colors.muted, fontSize: 15, lineHeight: 21 },
   footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.line,
     backgroundColor: colors.surface,
   },
   banner: {

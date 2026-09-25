@@ -72,6 +72,14 @@ export interface User {
   createdAt: string;
 }
 
+export type ProduceCategory = "fruit" | "vegetables" | "meat" | "fish" | "dairy";
+export type BuyerSeat = "requester" | "approver" | "admin";
+export type MomoNetwork = "MTN" | "Telecel" | "AirtelTigo";
+export type WalletTier = "bronze" | "silver" | "gold";
+export type TempCheckpoint = "load" | "farm_stop" | "depart_last" | "arrival" | "handover";
+export type BuyerOrderStatus = "SUBMITTED" | "AWAITING_PAYMENT" | "PAID" | "ALLOCATED" | "IN_FULFILMENT" | "DELIVERED" | "ACCEPTED" | "CANCELLED";
+export type BuyerPaymentStatus = "UNPAID" | "PENDING" | "PAID" | "FAILED";
+
 export interface FarmerProfile {
   id: string;
   userId: string;
@@ -83,6 +91,10 @@ export interface FarmerProfile {
   locationLabel: string;
   latitude?: number;
   longitude?: number;
+  momoNumber?: string;
+  momoNetwork?: MomoNetwork;
+  walletTier?: WalletTier;
+  consentAt?: string;
 }
 
 export interface OfftakerProfile {
@@ -92,6 +104,8 @@ export interface OfftakerProfile {
   deliveryLocation: string;
   latitude?: number;
   longitude?: number;
+  buyerSeat?: BuyerSeat;
+  paymentLimitGhs?: number;
 }
 
 export interface FieldAgentProfile {
@@ -126,6 +140,8 @@ export interface Produce {
   id: string;
   name: string;
   defaultUnit: string;
+  category?: ProduceCategory;
+  pricePerKg?: number;
   temperatureMinC?: number;
   temperatureMaxC?: number;
 }
@@ -262,6 +278,7 @@ export interface RouteStop {
   status: StopStatus;
   sequence: number;
   arrivedAt?: string;
+  departedAt?: string;
   completedAt?: string;
 }
 
@@ -278,6 +295,14 @@ export interface FieldInspection {
   qualityStatus: "ACCEPTED" | "PARTIAL" | "REJECTED";
   notes?: string;
   photoUris: string[];
+  identityPhotoUri?: string;
+  cratePhotoUri?: string;
+  scalePhotoUri?: string;
+  timePicked?: string;
+  coldBoxAt?: string;
+  locked?: boolean;
+  declined?: boolean;
+  declineReason?: string;
   latitude?: number;
   longitude?: number;
   recordedAt: string;
@@ -347,6 +372,7 @@ export interface ProofOfDelivery {
   driverId: string;
   syncStatus: SyncStatus;
   idempotencyKey: string;
+  lines?: Array<{ consignmentId: string; acceptedKg: number; rejectedKg: number; reason?: string }>;
 }
 
 export interface TemperatureRecord {
@@ -360,6 +386,9 @@ export interface TemperatureRecord {
   timestamp: string;
   latitude?: number;
   longitude?: number;
+  checkpoint?: TempCheckpoint;
+  gaugePhotoUri?: string;
+  outOfRange?: boolean;
   syncStatus: SyncStatus;
   idempotencyKey: string;
 }
@@ -499,8 +528,46 @@ export interface OtpChallenge {
   consumed: boolean;
 }
 
+export interface BuyerOrder {
+  id: string;
+  offtakerId: string;
+  produceId: string;
+  quantityKg: number;
+  deliveryDate: string;
+  pricePerKg: number;
+  totalGhs: number;
+  orderStatus: BuyerOrderStatus;
+  paymentStatus: BuyerPaymentStatus;
+  submittedBy: string;
+  paidBy?: string;
+  lotId?: string;
+  createdAt: string;
+}
+
+export interface PayoutRun {
+  id: string;
+  settlementIds: string[];
+  raisedBy: string;
+  approvals: string[];
+  status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "PAID";
+  totalGhs: number;
+  createdAt: string;
+  dueAt: string;
+}
+
+export interface OpsConfig {
+  payoutApprovalThresholdGhs: number;
+  payoutApproverIds: string[];
+  temperatureMinC: number;
+  temperatureMaxC: number;
+  checkpoints: TempCheckpoint[];
+}
+
 export interface AppDatabase {
   version: 1;
+  buyerOrders: BuyerOrder[];
+  payoutRuns: PayoutRun[];
+  opsConfig: OpsConfig;
   users: User[];
   farmerProfiles: FarmerProfile[];
   offtakerProfiles: OfftakerProfile[];

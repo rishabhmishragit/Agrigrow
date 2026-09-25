@@ -31,9 +31,9 @@ export function LoginScreen() {
       <View style={[styles.shell, wide && styles.shellWide]}>
         <View style={[styles.brand, wide && styles.brandWide]}>
           <Text style={styles.mark}>CryoChain</Text>
-          <Text style={styles.brandTitle}>Cold-chain aggregation for Ghana.</Text>
+          <Text style={styles.brandTitle}>Cold from the farm gate to your door.</Text>
           <Text style={styles.brandCopy}>
-            One operational system for farmers, buyers, field agents, drivers and operations. Buyers pay before collection. Farmers are paid within 24 hours of delivery.
+            Buyers pay before collection. Farmers are paid within 24 hours of delivery.
           </Text>
           <View style={styles.steps}>
             {STEPS.map((step, index) => (
@@ -93,18 +93,18 @@ export function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.sidebar },
+  safe: { flex: 1, backgroundColor: colors.bg },
   shell: { flex: 1 },
   shellWide: { flexDirection: "row" },
-  brand: { padding: 28, paddingTop: 36 },
+  brand: { padding: 28, paddingTop: 36, backgroundColor: colors.bg },
   brandWide: { width: "42%", justifyContent: "center", padding: 48 },
-  mark: { color: "#9DCFB8", fontSize: 13, fontWeight: "700", letterSpacing: 1.6, textTransform: "uppercase" },
-  brandTitle: { color: colors.white, fontSize: 36, lineHeight: 42, fontWeight: "700", letterSpacing: -0.8, marginTop: 14, maxWidth: 420 },
-  brandCopy: { color: colors.sidebarText, fontSize: 15, lineHeight: 23, marginTop: 14, maxWidth: 420 },
+  mark: { color: colors.primary, fontSize: 13, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
+  brandTitle: { color: colors.ink, fontSize: 32, lineHeight: 37, fontWeight: "500", marginTop: 28, maxWidth: 420 },
+  brandCopy: { color: colors.muted, fontSize: 16, lineHeight: 24, marginTop: 8, maxWidth: 420 },
   steps: { flexDirection: "row", flexWrap: "wrap", marginTop: 28, gap: 8 },
-  step: { backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, minWidth: 88 },
-  stepIndex: { color: "#9DCFB8", fontSize: 11, fontWeight: "700", letterSpacing: 0.6 },
-  stepLabel: { color: colors.white, fontSize: 14, fontWeight: "600", marginTop: 2 },
+  step: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, minWidth: 88 },
+  stepIndex: { color: colors.primary, fontSize: 11, fontWeight: "600" },
+  stepLabel: { color: colors.ink, fontSize: 14, fontWeight: "600", marginTop: 2 },
   formPane: { flex: 1, backgroundColor: colors.bg },
   formWrap: { flexGrow: 1, padding: 28, justifyContent: "center" },
   form: { width: "100%", maxWidth: 480, alignSelf: "center", paddingVertical: 12 },
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   formTitle: { color: colors.ink, fontSize: 28, fontWeight: "700", letterSpacing: -0.5, marginTop: 6 },
   formHelp: { color: colors.muted, lineHeight: 21, marginTop: 8, marginBottom: 16 },
   roles: { marginBottom: 8 },
-  role: { borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, borderRadius: 14, padding: 12, marginBottom: 8 },
+  role: { borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, borderRadius: 8, padding: 12, marginBottom: 8 },
   roleOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   roleLabel: { color: colors.ink, fontWeight: "700", fontSize: 15 },
   roleLabelOn: { color: colors.primaryDark },

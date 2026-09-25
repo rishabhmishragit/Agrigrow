@@ -1,4 +1,5 @@
 import * as SQLite from "expo-sqlite";
+import { hydrateDatabase } from "../domain/db";
 import type { AppDatabase } from "../domain/types";
 
 let databasePromise: ReturnType<typeof SQLite.openDatabaseAsync> | undefined;
@@ -17,7 +18,7 @@ export async function loadState(): Promise<AppDatabase | null> {
   if (!row?.json) return null;
   const parsed = JSON.parse(row.json) as AppDatabase;
   if (parsed.version !== 1) return null;
-  return parsed;
+  return hydrateDatabase(parsed);
 }
 
 export async function saveState(state: AppDatabase): Promise<void> {

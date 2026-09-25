@@ -3,7 +3,8 @@ import { Linking, StyleSheet, Text } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { config } from "../../config";
 import { useCryo } from "../../state/CryoProvider";
-import { Button, Card, Empty, Field, KeyValue, Screen, StatusBadge } from "../../components/ui";
+import { Button, Card, Choice, Empty, Field, KeyValue, Screen, StatusBadge } from "../../components/ui";
+import { markDeparted } from "../../domain/clientFlows";
 import {
   arriveAtStop,
   confirmCollection,
@@ -59,19 +60,21 @@ export function ManifestScreen({ navigation }: ManifestProps) {
 
   if (!manifest) return <Screen title="Route"><Empty text="No manifest is assigned today." /></Screen>;
   const pending = stops.filter((item) => item.status !== "COLLECTED" && item.status !== "DELIVERED");
+  const queued = db.syncQueue.filter((item) => item.actorId === user?.id && item.syncStatus !== "SYNCED").length;
   return (
-    <Screen title="Today's route" subtitle={`${manifest.code} · ${vehicle?.plate ?? "Vehicle"} · ${offline ? "Offline" : "Online"}`}>
+    <Screen title="Today's route" subtitle={`${manifest.code} · ${vehicle?.plate ?? "Truck"} · ${offline ? "Offline" : "Online"}`}>
       <Card>
         <KeyValue label="Route" value={manifest.routeLabel} />
         <KeyValue label="Destination" value={manifest.destination} />
         <KeyValue label="Pending actions" value={String(pending.length)} />
+        <KeyValue label="Offline queue" value={String(queued)} />
       </Card>
       <Button label={forceOffline ? "Offline mode on" : "Work offline"} tone="secondary" onPress={() => setForceOffline(!forceOffline)} />
       <Button label="Account" tone="secondary" onPress={() => navigation.navigate("Profile")} />
       <Button label={sharing ? "Stop sharing position" : "Share position on this route"} tone="secondary" onPress={() => setSharing((value) => !value)} />
       {stops.map((stop) => (
         <Card key={stop.id}>
-          <Text style={styles.title}>{stop.sequence}. {stop.kind === "COLLECTION" ? "Collection" : "Delivery"}</Text>
+          <Text style={styles.title}>{stop.sequence}. {stop.kind === "COLLECTION" ? "Farm gate" : "Delivery"}</Text>
           <Text style={styles.meta}>{stop.location}</Text>
           <Text style={styles.meta}>{stop.windowLabel}</Text>
           <StatusBadge status={stop.status} />
@@ -95,19 +98,29 @@ export function ManifestScreen({ navigation }: ManifestProps) {
 export function StopScreen({ route }: StopProps) {
   const { db, run, busy, offline } = useCryo();
   const stop = db.stops.find((item) => item.id === route.params.id);
-  const [temperature, setTemperature] = useState("10");
+  const [temperature, setTemperature] = useState("");
+  const [checkpoint, setCheckpoint] = useState<"load" | "farm_stop" | "depart_last" | "arrival" | "handover">(stop?.kind === "DELIVERY" ? "arrival" : "farm_stop");
+  const [gauge, setGauge] = useState<string | undefined>();
   const [receiver, setReceiver] = useState("");
   const [signature, setSignature] = useState("");
-  const [notes, setNotes] = useState("");
+  const [accepted, setAccepted] = useState<Record<string, string>>({});
+  const [rejected, setRejected] = useState<Record<string, string>>({});
+  const [reason, setReason] = useState("");
   const [photo, setPhoto] = useState<string | undefined>();
+  const queued = db.syncQueue.filter((item) => item.actorId && item.syncStatus !== "SYNCED").length;
   if (!stop) return <Screen title="Stop"><Empty text="Stop was not found." /></Screen>;
-  const lot = db.lots.find((item) => item.id === stop.lotId);
+  const lines = db.consignments.filter((item) => stop.consignmentIds.includes(item.id));
+  const appTime = db.temperatures.find((item) => item.stopId === stop.id)?.timestamp;
   return (
-    <Screen title={stop.kind === "COLLECTION" ? "Collection" : "Delivery"} subtitle={`${lot?.code ?? ""} · ${stop.location} · ${offline ? "Offline" : "Online"}`}>
+    <Screen title={stop.kind === "COLLECTION" ? "Farm gate" : "Delivery"} subtitle={`${stop.location} · ${offline ? "Offline" : "Online"} · queue ${queued}`}>
       <Card>
         <StatusBadge status={stop.status} />
         <KeyValue label="Window" value={stop.windowLabel} />
-        <KeyValue label="Consignments" value={String(stop.consignmentIds.length)} />
+        {stop.arrivedAt ? <KeyValue label="Arrived" value={stop.arrivedAt} /> : null}
+        {stop.departedAt ? <KeyValue label="Departed" value={stop.departedAt} /> : null}
+        {lines.map((item) => (
+          <KeyValue key={item.id} label="Price per kg" value={`${item.expectedQuantity} kg · ${item.agreedPricePerUnit} GHS`} />
+        ))}
       </Card>
       <Button
         label="Mark arrived"
@@ -119,11 +132,17 @@ export function StopScreen({ route }: StopProps) {
           })()
         }
       />
+      <Text style={styles.meta}>Checkpoint</Text>
+      {db.opsConfig.checkpoints.map((item) => (
+        <Choice key={item} label={item.replace(/_/g, " ")} selected={checkpoint === item} onPress={() => setCheckpoint(item)} />
+      ))}
       <Field label="Temperature (°C)" value={temperature} onChangeText={setTemperature} keyboardType="numeric" />
+      <Button label={gauge ? "Gauge photo added" : "Gauge photo"} tone="secondary" onPress={() => void captureEvidence().then((uri) => { if (uri) setGauge(uri); })} />
+      {appTime ? <Text style={styles.meta}>App time {appTime}. This time is not editable.</Text> : null}
       <Button
         label="Record temperature"
         tone="secondary"
-        disabled={busy}
+        disabled={busy || !gauge || !temperature}
         onPress={() =>
           void (async () => {
             const position = await readPosition();
@@ -132,9 +151,11 @@ export function StopScreen({ route }: StopProps) {
                 stopId: stop.id,
                 temperature: Number(temperature),
                 unit: "C",
+                checkpoint,
+                gaugePhotoUri: gauge,
                 latitude: position?.latitude,
                 longitude: position?.longitude,
-                idempotencyKey: `temp:${stop.id}:${user.id}`,
+                idempotencyKey: `temp:${stop.id}:${checkpoint}`,
                 offline,
               }),
             );
@@ -142,32 +163,35 @@ export function StopScreen({ route }: StopProps) {
         }
       />
       {stop.kind === "COLLECTION" ? (
-        <Button
-          label={busy ? "Saving" : "Confirm collection"}
-          disabled={busy}
-          onPress={() =>
-            void (async () => {
-              const position = await readPosition();
-              await run((state, ports, user) =>
-                confirmCollection(state, ports, user.id, {
-                  stopId: stop.id,
-                  idempotencyKey: `collect:${stop.id}`,
-                  offline,
-                  latitude: position?.latitude,
-                  longitude: position?.longitude,
-                }),
-              );
-            })()
-          }
-        />
+        <>
+          <Button label="Arrived" tone="secondary" onPress={() => void (async () => { const position = await readPosition(); await run((state, ports, user) => arriveAtStop(state, ports, user.id, stop.id, position)); })()} />
+          <Button
+            label={busy ? "Saving" : "Collected"}
+            disabled={busy}
+            onPress={() =>
+              void (async () => {
+                const position = await readPosition();
+                await run((state, ports, user) => confirmCollection(state, ports, user.id, { stopId: stop.id, idempotencyKey: `collect:${stop.id}`, offline, latitude: position?.latitude, longitude: position?.longitude }));
+              })()
+            }
+          />
+          <Button label="Departed" tone="secondary" onPress={() => void run((state, ports, user) => markDeparted(state, ports, user.id, stop.id))} />
+        </>
       ) : (
         <>
+          {lines.map((item) => (
+            <Card key={item.id}>
+              <Text style={styles.title}>{item.expectedQuantity} kg expected</Text>
+              <Field label="Accepted kg" value={accepted[item.id] ?? ""} onChangeText={(value) => setAccepted((current) => ({ ...current, [item.id]: value }))} keyboardType="numeric" />
+              <Field label="Rejected kg" value={rejected[item.id] ?? ""} onChangeText={(value) => setRejected((current) => ({ ...current, [item.id]: value }))} keyboardType="numeric" />
+            </Card>
+          ))}
+          <Field label="Reason for rejected kg" value={reason} onChangeText={setReason} />
           <Field label="Receiver name" value={receiver} onChangeText={setReceiver} />
           <Field label="Signature (type full name)" value={signature} onChangeText={setSignature} />
-          <Field label="Notes" value={notes} onChangeText={setNotes} multiline />
-          <Button label={photo ? "Photo added" : "Add proof photo"} tone="secondary" onPress={() => void captureEvidence().then(setPhoto)} />
+          <Button label={photo ? "Photo added" : "Add proof photo"} tone="secondary" onPress={() => void captureEvidence().then((uri) => { if (uri) setPhoto(uri); })} />
           <Button
-            label={busy ? "Saving" : "Confirm delivery"}
+            label={busy ? "Saving" : "Confirm handover"}
             disabled={busy}
             onPress={() =>
               void (async () => {
@@ -177,8 +201,9 @@ export function StopScreen({ route }: StopProps) {
                     stopId: stop.id,
                     receiverName: receiver,
                     signatureName: signature,
-                    notes,
+                    notes: reason,
                     photoUris: photo ? [photo] : [],
+                    lineItems: lines.map((item) => ({ consignmentId: item.id, acceptedKg: Number(accepted[item.id] ?? 0), rejectedKg: Number(rejected[item.id] ?? 0), reason })),
                     latitude: position?.latitude,
                     longitude: position?.longitude,
                     idempotencyKey: `deliver:${stop.id}`,

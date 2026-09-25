@@ -29,6 +29,10 @@ export interface InspectionInput {
   gradeCode: string;
   notes?: string;
   photoUris?: string[];
+  identityPhotoUri?: string;
+  cratePhotoUri?: string;
+  scalePhotoUri?: string;
+  timePicked?: string;
   latitude?: number;
   longitude?: number;
   scaleRef?: string;
@@ -72,6 +76,10 @@ export async function recordInspection(
     existing.qualityStatus = qualityStatus;
     existing.notes = input.notes;
     existing.photoUris = input.photoUris ?? existing.photoUris;
+    existing.identityPhotoUri = input.identityPhotoUri ?? existing.identityPhotoUri;
+    existing.cratePhotoUri = input.cratePhotoUri ?? existing.cratePhotoUri;
+    existing.scalePhotoUri = input.scalePhotoUri ?? existing.scalePhotoUri;
+    existing.timePicked = input.timePicked ?? existing.timePicked;
     existing.latitude = input.latitude;
     existing.longitude = input.longitude;
     return {
@@ -93,6 +101,10 @@ export async function recordInspection(
     qualityStatus,
     notes: input.notes,
     photoUris: input.photoUris ?? [],
+    identityPhotoUri: input.identityPhotoUri,
+    cratePhotoUri: input.cratePhotoUri,
+    scalePhotoUri: input.scalePhotoUri,
+    timePicked: input.timePicked,
     latitude: input.latitude,
     longitude: input.longitude,
     recordedAt: ports.now(),
@@ -312,6 +324,7 @@ export interface DeliveryStampInput {
   longitude?: number;
   idempotencyKey: string;
   offline: boolean;
+  lineItems?: Array<{ consignmentId: string; acceptedKg: number; rejectedKg: number; reason?: string }>;
 }
 
 export async function confirmDelivery(
@@ -358,6 +371,7 @@ export async function confirmDelivery(
     driverId: manifest.driverId,
     syncStatus: input.offline ? "PENDING" : "SYNCED",
     idempotencyKey: input.idempotencyKey,
+    lines: input.lineItems,
   };
   if (!existingProof) db.proofs.push(proof);
   if (input.offline) {
@@ -430,6 +444,8 @@ export async function recordTemperature(
     unit: "C" | "F";
     latitude?: number;
     longitude?: number;
+    checkpoint?: "load" | "farm_stop" | "depart_last" | "arrival" | "handover";
+    gaugePhotoUri?: string;
     idempotencyKey: string;
     offline: boolean;
   },
@@ -459,9 +475,26 @@ export async function recordTemperature(
     timestamp: ports.now(),
     latitude: input.latitude,
     longitude: input.longitude,
+    checkpoint: input.checkpoint,
+    gaugePhotoUri: input.gaugePhotoUri,
+    outOfRange: input.temperature < db.opsConfig.temperatureMinC || input.temperature > db.opsConfig.temperatureMaxC,
     syncStatus: input.offline ? "PENDING" : "SYNCED",
     idempotencyKey: input.idempotencyKey,
   });
+  const reading = db.temperatures.find((item) => item.id === id);
+  if (reading?.outOfRange) {
+    db.exceptions.push({
+      id: ports.id("exception"),
+      type: "Temp out of range",
+      severity: "HIGH",
+      entityType: "TemperatureRecord",
+      entityId: id,
+      description: `${input.temperature}°${input.unit} at ${input.checkpoint ?? "checkpoint"} is outside ${db.opsConfig.temperatureMinC}–${db.opsConfig.temperatureMaxC}°C.`,
+      createdBy: user.id,
+      status: "OPEN",
+      createdAt: ports.now(),
+    });
+  }
   if (input.offline) {
     enqueue(db, ports, user.id, {
       entityType: "TemperatureRecord",

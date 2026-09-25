@@ -7,6 +7,7 @@ export * from "./support";
 export * from "./trade";
 export * from "./fieldOps";
 export * from "./settlement";
+export * from "./clientFlows";
 export * from "./ussd";
 export * from "./ussdGateway";
 export { createSeed } from "./seed";

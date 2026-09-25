@@ -610,6 +610,10 @@ export async function registerFarmer(
     farmInfo?: string;
     latitude?: number;
     longitude?: number;
+    momoNumber?: string;
+    momoNetwork?: "MTN" | "Telecel" | "AirtelTigo";
+    walletTier?: "bronze" | "silver" | "gold";
+    consentAt?: string;
   },
 ): Promise<CommandResult<{ userId: string; farmerId: string }>> {
   const db = begin(source);
@@ -643,6 +647,10 @@ export async function registerFarmer(
     locationLabel: input.location,
     latitude: input.latitude,
     longitude: input.longitude,
+    momoNumber: input.momoNumber,
+    momoNetwork: input.momoNetwork,
+    walletTier: input.walletTier,
+    consentAt: input.consentAt,
   });
   audit(db, ports, user, "FARMER_REGISTERED", "FarmerProfile", farmerId, undefined, "active");
   await sendSms(db, ports, {
